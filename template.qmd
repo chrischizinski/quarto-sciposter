@@ -1,0 +1,77 @@
+---
+title: "Flexible Scientific Posters with Quarto and Typst"
+subtitle: "A reusable poster format extension"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+  - name: Second Author
+    affiliations:
+      - name: Cooperating Institution
+format:
+  sciposter-typst:
+    keep-typ: true
+    poster:
+      size: "48x36"        # WxH in inches, or a0 / a1 / a2
+      columns: 3
+      theme: unl           # unl | generic
+      footer: "Example Conference 2026 — Lincoln, NE — cchizinski2@unl.edu"
+logos:
+  left:
+    - logos/left-logo.svg
+  right:
+    - logos/right-logo.svg
+    - logos/right-logo2.svg
+---
+
+# Introduction
+
+Scientific posters need flexible layouts: variable column counts, arbitrary
+dimensions, institutional branding, and figures that can span the full poster
+width. This extension provides all of that from plain Quarto markdown.
+
+::: {.poster-box .highlight title="Key finding"}
+Fenced divs become styled boxes. Use `.highlight` or `.alert` variants and an
+optional `title` attribute.
+:::
+
+# Methods
+
+Body text flows through the configured number of columns. Standard markdown
+works: **bold**, *italic*, lists:
+
+- Column count set in YAML (`poster.columns`)
+- Poster size as `"48x36"` or named sizes (`a0`, `a1`, `a2`)
+- Themes switchable per poster
+
+## Subheading style
+
+Level-2 headings get an underline treatment instead of a filled bar.
+
+# Results
+
+Force a column break anywhere:
+
+::: {.col-break}
+:::
+
+Figures placed normally occupy their column. To span all columns, wrap in a
+`.full-width` div:
+
+::: {.full-width}
+![A full-width figure spanning every column](logos/wide-figure.svg)
+:::
+
+More results text after the full-width figure continues flowing in columns as
+expected.
+
+# Conclusions
+
+::: {.alert title="Take-home message"}
+One extension, any poster size, any column count, any number of logos.
+:::
+
+# Acknowledgments
+
+Sponsor and cooperator logos go in the title bar via `logos.left` and
+`logos.right` lists in the YAML header.

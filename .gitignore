@@ -1,0 +1,7 @@
+/*.pdf
+/*.typ
+/*_files/
+/examples/*.pdf
+/examples/*.typ
+/examples/*_files/
+.quarto/
