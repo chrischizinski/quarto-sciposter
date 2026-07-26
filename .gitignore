@@ -5,3 +5,6 @@
 /examples/*.typ
 /examples/*_files/
 .quarto/
+
+/.quarto/
+**/*.quarto_ipynb

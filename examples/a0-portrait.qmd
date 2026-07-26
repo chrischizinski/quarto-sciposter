@@ -1,0 +1,57 @@
+---
+title: "A0 Portrait Poster with the Generic Theme"
+subtitle: "Two columns, references in the flow, no logos"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+bibliography: refs.bib
+format:
+  sciposter-typst:
+    poster:
+      size: a0
+      orientation: portrait
+      columns: 2
+      theme: generic
+      refs: flow
+      footer: "Example Society Meeting 2026"
+---
+
+# Introduction
+
+Portrait orientation suits venues with narrow easels. Named sizes (`a0`,
+`a1`, `a2`) are stored portrait; add `orientation: landscape` to flip them.
+Citations work like any Quarto document [@smith2020].
+
+# Methods
+
+Creel survey design follows @jones2021. Body text, lists, and boxes flow
+through two columns here.
+
+::: {.poster-box .highlight title="Study area"}
+Fifteen reservoirs across the Great Plains, surveyed May–September.
+:::
+
+# Results
+
+::: {.full-width}
+![Wide result figure spanning both columns](../logos/wide-figure.svg)
+:::
+
+Text continues in columns after the full-width figure.
+
+::: {.col-break}
+:::
+
+# Discussion
+
+Column break above pushed this section to the second column.
+
+::: {.alert title="Management implication"}
+Effort estimates change materially under heterogeneous-effort designs.
+:::
+
+# References
+
+::: {#refs}
+:::

@@ -1,0 +1,56 @@
+---
+title: "Computed Figures from R Chunks"
+subtitle: "ggplot2 in columns and full-width spans"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+format:
+  sciposter-typst:
+    poster:
+      size: "42x30"
+      columns: 3
+      theme: unl
+      footer:
+        left: "Rendered with Quarto + Typst"
+        right: "github.com/chrischizinski"
+---
+
+# In-column figure
+
+Unsized figures fill their column width, capped at `poster.fig-max-height`
+(default 45% of the column) so they cannot starve the layout.
+
+```{r}
+#| echo: false
+#| message: false
+#| fig-cap: "Column-width ggplot"
+library(ggplot2)
+ggplot(mtcars, aes(wt, mpg, color = factor(cyl))) +
+  geom_point(size = 4) +
+  scale_color_manual(values = c("#D00000", "#1f4e79", "#2e7d32")) +
+  labs(color = "Cylinders") +
+  theme_minimal(base_size = 18)
+```
+
+# Sizing control
+
+Set an explicit width to override the fill behavior, exactly as in any
+Quarto document (`fig-width`, or a `width=` attribute on markdown images).
+
+# Full-width span
+
+::: {.full-width}
+```{r}
+#| echo: false
+#| fig-cap: "Full-width histogram across all three columns"
+#| fig-width: 16
+#| fig-height: 4
+hist(rnorm(2000), breaks = 60, col = "#D00000", border = "white", main = "")
+```
+:::
+
+# Notes
+
+Full-width blocks float to the top or bottom edge of the body — a Typst
+constraint on parent-scoped floats inside columns.

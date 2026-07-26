@@ -1,0 +1,5 @@
+examples/
+.github/
+README.md
+*.pdf
+*.typ
