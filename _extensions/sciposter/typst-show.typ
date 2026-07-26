@@ -35,8 +35,20 @@ $endif$
 $if(poster.fig-max-height)$
   fig-max-height: $poster.fig-max-height$,
 $endif$
+$if(poster.refs)$
+  refs-kind: "$poster.refs$",
+$endif$
 $if(poster.footer)$
   footer-text: [$poster.footer$],
+$endif$
+$if(poster.footer-center)$
+  footer-text: [$poster.footer-center$],
+$endif$
+$if(poster.footer-left)$
+  footer-left: [$poster.footer-left$],
+$endif$
+$if(poster.footer-right)$
+  footer-right: [$poster.footer-right$],
 $endif$
 $if(logos.left)$
   logos-left: ($for(logos.left)$"$it$", $endfor$),

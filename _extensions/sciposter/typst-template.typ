@@ -29,6 +29,7 @@
     heading-fg: white,
     body-fg: rgb("#242021"),
     box-bg: rgb("#F5F1E7"),
+    stripe: rgb("#F5F1E7"),
     fonts: ("Helvetica Neue", "Helvetica", "Arial", "Liberation Sans"),
   ),
 )
@@ -102,6 +103,32 @@
   )
 }
 
+// References: compact type, ragged right. `kind: "box"` adds the poster-box
+// frame. Applied via a show rule on the <refs> block citeproc emits (a Lua
+// wrap can't work: filters run before citeproc fills the div). Place the
+// section anywhere with an empty `::: {#refs}` div; the heading is the
+// author's own (`# References`).
+#let refs-section(kind: "flow", body) = context {
+  let th = _theme.get()
+  let inner = {
+    set text(size: 0.7em)
+    set par(justify: false)
+    body
+  }
+  if kind == "box" {
+    block(
+      width: 100%,
+      fill: th.box-bg,
+      radius: 4pt,
+      inset: 0.25in,
+      breakable: true,
+      inner,
+    )
+  } else {
+    inner
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Main template
 // ---------------------------------------------------------------------------
@@ -121,15 +148,58 @@
   logos-right: (),
   logo-height: 1.5in,
   footer-text: none,
+  footer-left: none,
+  footer-right: none,
   base-font-size: 24pt,
   title-font-size: 72pt,
   fig-max-height: 45%,
+  refs-kind: "flow",
   body,
 ) = {
   let th = poster-themes.at(theme, default: poster-themes.generic)
   let (page-w, page-h) = resolve-size(size, orientation)
 
-  set page(width: page-w, height: page-h, margin: 0pt, fill: th.bg)
+  set page(
+    width: page-w,
+    height: page-h,
+    margin: 0pt,
+    fill: th.bg,
+    // A poster is one page; overflowing body text is CLIPPED at the page
+    // edge, not moved to page 2 — so losing it silently is the real hazard.
+    // A zero-size marker sits at the very end of the body; if it laid out
+    // past the page bottom (or never laid out), content was cut off. Warn
+    // loudly on the poster itself so it never slips through to print.
+    background: context {
+      let warn(msg) = place(
+        top + center,
+        dy: 0.35 * page-h,
+        block(
+          fill: rgb("#c00000"),
+          inset: 0.4in,
+          radius: 8pt,
+          text(
+            fill: white,
+            weight: "bold",
+            size: 48pt,
+            font: ("Helvetica Neue", "Helvetica", "Arial", "Liberation Sans"),
+            msg,
+          ),
+        ),
+      )
+      if here().page() > 1 {
+        warn([CONTENT OVERFLOW — does not fit the poster page])
+      } else {
+        let m = query(<sciposter-end>)
+        let overflowed = m.len() == 0 or {
+          let pos = m.first().location().position()
+          m.first().location().page() > 1 or pos.y > page-h
+        }
+        if overflowed {
+          warn([CONTENT OVERFLOW — text below this page's edge is CUT OFF])
+        }
+      }
+    },
+  )
   set text(font: th.fonts, size: base-font-size, fill: th.body-fg)
   set par(justify: true, leading: 0.65em)
   set heading(numbering: none)
@@ -154,6 +224,12 @@
     text(fill: th.accent, size: 1.25 * base-font-size, weight: "bold", it.body),
   )
   show link: set text(fill: th.accent)
+  show figure.caption: it => {
+    set text(size: 0.75 * base-font-size, fill: th.body-fg.lighten(25%))
+    set par(justify: false)
+    it
+  }
+  show <refs>: it => refs-section(kind: refs-kind, it)
 
   // ---- title bar ----
   let author-line = if authors.len() > 0 {
@@ -208,13 +284,30 @@
       logo-stack(logos-right),
     ),
   )
+  // Thin accent stripe separates the title bar from the body.
+  let titlebar = stack(
+    titlebar,
+    block(width: 100%, height: 0.12in, fill: th.at("stripe", default: th.accent)),
+  )
 
-  let footerbar = if footer-text != none {
+  // Footer: single string centers; left/center/right slots for the 3-part
+  // layout (event | contact | url etc.).
+  let footerbar = if (footer-text, footer-left, footer-right) != (none, none, none) {
     block(
       width: 100%,
       fill: th.accent,
       inset: (x: margin, y: 0.3in),
-      text(fill: th.titlebar-fg, size: 0.9 * base-font-size, footer-text),
+      {
+        set text(fill: th.titlebar-fg, size: 0.9 * base-font-size)
+        grid(
+          columns: (1fr, auto, 1fr),
+          column-gutter: 0.5in,
+          align: (left + horizon, center + horizon, right + horizon),
+          if footer-left != none { footer-left } else { [] },
+          if footer-text != none { footer-text } else { [] },
+          if footer-right != none { footer-right } else { [] },
+        )
+      },
     )
   } else { none }
 
@@ -247,6 +340,8 @@
       }
     }
     body
+    // End-of-body marker for the overflow detector in the page background.
+    [#metadata("sciposter-end") <sciposter-end>]
   }
 
   grid(

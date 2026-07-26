@@ -5,6 +5,9 @@ quarto-required: ">=1.4.0"
 contributes:
   formats:
     typst:
+      # citeproc fills the ::: {#refs} div wherever the author places it;
+      # Typst-native bibliography would force its own trailing section.
+      citeproc: true
       filters:
         - sciposter.lua
       template-partials:
