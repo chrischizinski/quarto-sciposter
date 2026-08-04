@@ -23,6 +23,33 @@ $endif$
 $if(poster.theme)$
   theme: "$poster.theme$",
 $endif$
+$if(poster.colors)$
+$-- Values arrive as bare hex (the Lua filter strips "#", which Pandoc would
+$-- otherwise escape into rgb() as "\#"). sciposter() converts them.
+  theme-colors: ($for(poster.colors/pairs)$$it.key$: "$it.value$", $endfor$),
+$endif$
+$if(poster.fonts)$
+  theme-fonts: ($for(poster.fonts)$"$it$", $endfor$),
+$endif$
+$if(poster.heading-fonts)$
+  theme-heading-fonts: ($for(poster.heading-fonts)$"$it$", $endfor$),
+$endif$
+$-- Quarto always defines these in Typst scope — `(:)` when the project has no
+$-- `_brand.yml` — so they can be forwarded unconditionally.
+  brand-colors: brand-color,
+$-- `$if()$` cannot tell an absent key from an explicit `false` (both take the
+$-- else branch), but interpolation can: absent renders "", `false` renders
+$-- "false". That is what makes `poster.brand: false` an opt-out while the
+$-- default stays on.
+  brand-enabled: "$poster.brand$" != "false",
+$if(mainfont)$
+  brand-fonts: ("$mainfont$",),
+$elseif(brand.typography.base.family)$
+  brand-fonts: $brand.typography.base.family$,
+$endif$
+$if(brand.typography.headings.family)$
+  brand-heading-fonts: $brand.typography.headings.family$,
+$endif$
 $if(poster.logo-height)$
   logo-height: $poster.logo-height$,
 $endif$
@@ -37,6 +64,12 @@ $if(poster.fig-max-height)$
 $endif$
 $if(poster.refs)$
   refs-kind: "$poster.refs$",
+$endif$
+$if(poster.palette)$
+  palette: ($for(poster.palette)$"$it$", $endfor$),
+$endif$
+$if(poster.draft)$
+  draft: true,
 $endif$
 $if(poster.footer)$
   footer-text: [$poster.footer$],

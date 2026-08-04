@@ -30,7 +30,11 @@ Scientific posters need flexible layouts: variable column counts, arbitrary
 dimensions, institutional branding, and figures that can span the full poster
 width. This extension provides all of that from plain Quarto markdown.
 
-::: {.poster-box .highlight title="Key finding"}
+::: {.takeaway label="Key finding"}
+One extension renders any poster size, at readable type, from plain markdown.
+:::
+
+::: {.poster-box .highlight title="Supporting detail"}
 Fenced divs become styled boxes. Use `.highlight` or `.alert` variants and an
 optional `title` attribute.
 :::

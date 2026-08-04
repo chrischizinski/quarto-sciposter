@@ -1,0 +1,50 @@
+---
+title: "QR Codes on Posters"
+subtitle: "Linking a printed poster to code, data, and preprints"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+format:
+  sciposter-typst:
+    poster:
+      size: "36x24"
+      columns: 3
+      theme: unl
+      footer: "Scan anything you want to read later"
+---
+
+# Why QR codes
+
+A QR code is the only thing on a printed poster a reader can act on. It is
+also the only way a two-minute conversation turns into a download.
+
+Codes are generated from the URL at render time, so they cannot drift out of
+sync with the link the way a pasted screenshot does, and they are vector — a
+code stays sharp whether the poster prints at A2 or 48 inches wide.
+
+# Placing a code
+
+::: {.qr url="https://github.com/chrischizinski/quarto-sciposter" label="Source and documentation"}
+:::
+
+The `label` is optional but worth using: an unlabelled code asks the reader to
+scan something without telling them what they get.
+
+# Sizing
+
+Default size is 2 inches. The practical floor is about 1.5 inches — below
+that a phone struggles to lock on from a comfortable standing distance, and
+the code becomes decoration rather than a link.
+
+::: {.qr url="https://doi.org/10.5281/zenodo.0000000" size="1.5in" label="Preprint (minimum usable size)"}
+:::
+
+Mount height matters as much as size. A code near the top of a mounted poster
+can end up above head height, where nobody can hold a phone steady against it.
+Keep codes in the lower two-thirds.
+
+# Notes
+
+The QR package (`tiaoma`) is downloaded on first use and cached. Posters that
+place no codes never fetch it, so this costs nothing unless you use it.

@@ -4,6 +4,10 @@
 --   ::: {.col-break}    -> #colbreak()               (force column break)
 --   ::: {.poster-box}   -> #poster-box(...)[ ... ]   (framed box)
 --     variants: .highlight, .alert; optional title="..." attribute
+--   ::: {.takeaway}     -> #takeaway(...)[ ... ]     (3m headline finding)
+--     optional label="..." and scale="..." attributes
+--   ::: {.qr url="..."} -> #poster-qr(...)           (scannable QR code)
+--     optional size="..." and label="..." attributes
 --   ::: {#refs}         -> #refs-section(...)[ ... ] per poster.refs
 --     (flow | box | none)
 
@@ -29,6 +33,20 @@ local function read_meta(meta)
   if poster["refs"] and pandoc.utils.stringify(poster["refs"]) == "none" then
     meta["suppress-bibliography"] = true
   end
+  -- Strip the leading "#" from poster.colors values. Pandoc escapes "#" as
+  -- "\#" when a template variable is interpolated into Typst output (it is
+  -- Typst's code marker), which reaches rgb() as a non-hexadecimal character
+  -- and fails the compile. Quarto's own brand colours dodge this only because
+  -- it emits them as generated code rather than through a template variable.
+  -- The template re-adds the "#", so bare hex in YAML works too.
+  local colors = poster["colors"]
+  if colors ~= nil and pandoc.utils.type(colors) == "table" then
+    for key, value in pairs(colors) do
+      colors[key] = (pandoc.utils.stringify(value):gsub("^#", ""))
+    end
+    poster["colors"] = colors
+    meta["poster"] = poster
+  end
   -- poster.footer accepts a plain string or a {left, center, right} map;
   -- pandoc templates can't distinguish the two, so flatten the map here.
   local footer = poster["footer"]
@@ -49,6 +67,30 @@ local function map_div(div)
 
   if div.classes:includes("full-width") then
     return wrap(div, "#full-width[")
+  end
+
+  -- ::: {.qr url="https://..."} — url is required; without it the div is
+  -- left alone rather than emitting a QR that encodes nothing.
+  if div.classes:includes("qr") and div.attributes["url"] then
+    local args = { '"' .. div.attributes["url"] .. '"' }
+    if div.attributes["size"] then
+      table.insert(args, "size: " .. div.attributes["size"])
+    end
+    if div.attributes["label"] then
+      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+    end
+    return pandoc.RawBlock("typst", "#poster-qr(" .. table.concat(args, ", ") .. ")")
+  end
+
+  if div.classes:includes("takeaway") then
+    local args = {}
+    if div.attributes["scale"] then
+      table.insert(args, "scale: " .. div.attributes["scale"])
+    end
+    if div.attributes["label"] then
+      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+    end
+    return wrap(div, "#takeaway(" .. table.concat(args, ", ") .. ")[")
   end
 
   if div.classes:includes("poster-box")

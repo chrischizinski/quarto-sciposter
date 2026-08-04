@@ -11,10 +11,36 @@ format:
       size: "42x30"
       columns: 3
       theme: unl
+      # Colorblind-safe (Okabe-Ito), led by a hue that matches the theme.
+      # Declaring it here is what makes it a single source: the poster chrome
+      # and the R chunks below both read these values.
+      palette:
+        - "#D55E00"
+        - "#0072B2"
+        - "#009E73"
+        - "#CC79A7"
+        - "#E69F00"
+        - "#56B4E9"
       footer:
         left: "Rendered with Quarto + Typst"
         right: "github.com/chrischizinski"
 ---
+
+```{r}
+#| include: false
+# Read the palette declared in this document's YAML so figures and poster
+# chrome can never drift apart. Falls back to Okabe-Ito if poster.palette is
+# absent — R cannot see the Typst theme's built-in palette, so declaring
+# poster.palette explicitly is what keeps the two in sync.
+sciposter_palette <- function(n = NULL) {
+  p <- rmarkdown::metadata$format$`sciposter-typst`$poster$palette
+  if (is.null(p)) {
+    p <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9")
+  }
+  p <- unlist(p, use.names = FALSE)
+  if (is.null(n)) p else rep_len(p, n)
+}
+```
 
 # In-column figure
 
@@ -26,9 +52,11 @@ Unsized figures fill their column width, capped at `poster.fig-max-height`
 #| message: false
 #| fig-cap: "Column-width ggplot"
 library(ggplot2)
+# base_size 18 is a floor, not a default: axis text must stay legible at the
+# 1.5m scan tier once the figure is scaled into a column.
 ggplot(mtcars, aes(wt, mpg, color = factor(cyl))) +
   geom_point(size = 4) +
-  scale_color_manual(values = c("#D00000", "#1f4e79", "#2e7d32")) +
+  scale_color_manual(values = sciposter_palette(3)) +
   labs(color = "Cylinders") +
   theme_minimal(base_size = 18)
 ```
@@ -46,7 +74,7 @@ Quarto document (`fig-width`, or a `width=` attribute on markdown images).
 #| fig-cap: "Full-width histogram across all three columns"
 #| fig-width: 16
 #| fig-height: 4
-hist(rnorm(2000), breaks = 60, col = "#D00000", border = "white", main = "")
+hist(rnorm(2000), breaks = 60, col = sciposter_palette(1), border = "white", main = "")
 ```
 :::
 

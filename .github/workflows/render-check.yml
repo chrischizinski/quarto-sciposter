@@ -19,17 +19,21 @@ jobs:
 
       # examples/r-figures.qmd needs R + ggplot2; keep CI lean and render
       # only the pure-markdown posters. The R example is exercised locally.
+      # qr-codes.qmd is the only poster that resolves a Typst package
+      # (tiaoma, fetched lazily on first use). Rendering it here is what
+      # catches a package or registry breakage that no other example would.
       - name: Render posters
         run: |
           quarto render template.qmd --to sciposter-typst
           quarto render examples/a0-portrait.qmd --to sciposter-typst
+          quarto render examples/qr-codes.qmd --to sciposter-typst
 
       - name: Check page dimensions
         run: |
           sudo apt-get install -y poppler-utils
           pdfinfo template.pdf | grep -q "3456 x 2592" || { echo "template.pdf wrong size"; exit 1; }
           pdfinfo examples/a0-portrait.pdf | grep -q "A0" || { echo "a0-portrait.pdf wrong size"; exit 1; }
-          for f in template.pdf examples/a0-portrait.pdf; do
+          for f in template.pdf examples/a0-portrait.pdf examples/qr-codes.pdf; do
             pages=$(pdfinfo "$f" | awk '/^Pages:/ {print $2}')
             [ "$pages" = "1" ] || { echo "$f overflowed to $pages pages"; exit 1; }
           done
