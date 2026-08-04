@@ -8,3 +8,12 @@
 
 /.quarto/
 **/*.quarto_ipynb
+
+# Agent tooling and session scratch — machine-local, not part of the extension.
+.ai/
+.claude/
+
+# Posters authored with the extension, and the images they pull in. This repo
+# ships the extension itself; real posters live here only while being worked on.
+/tidycreel-afs-2026.qmd
+/assets/
