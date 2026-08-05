@@ -75,7 +75,7 @@ logos:
 | `base-font-size` | auto | Body text size; derived from poster width if unset (see Typography) |
 | `title-font-size` | auto | Poster title size; `2.3 ×` body size if unset |
 | `palette` | theme default | Figure colors, shared with R chunks (see Figure colors) |
-| `table-font-size` | `inherit` | `keep` leaves CSS font sizes on HTML tables alone (see Tables) |
+| `table-css` | `theme` | How much CSS to drop from HTML tables: `theme`, `size-only`, `keep` (see Tables) |
 | `draft` | `false` | Overlay a diagnostics panel on the render (see Draft mode) |
 
 `logos.left` / `logos.right` (top-level keys) take lists of image paths —
@@ -279,7 +279,7 @@ Only one of those failures announces itself, so if a table looks wrong:
 | Render aborts, *"Functions that produce HTML output…"* | `kableExtra::kbl()` |
 | Table is tiny — roughly a third of the body size | A CSS font size survived; see the escape hatches below |
 | Table is blurry when you zoom the PDF | `flextable` — it is a PNG, not text |
-| Table is the right size but the wrong colors | `gt`, keeping gt's styling |
+| Table is the right size but the wrong colors | `table-css` set to `size-only` or `keep` |
 | Rules doubled above the header or under the last row | A table drawing its own rules that this template did not recognise; file an issue |
 
 **`tinytable` is the recommendation for R tables** — `tt()` emits a native
@@ -287,14 +287,18 @@ Typst table that inherits the poster body size and picks up the theme's header
 color and booktabs rules. Pipe tables and `knitr::kable()` are equally safe and
 need no package.
 
-**`gt` works, with its own styling.** It emits HTML whose CSS carries a screen
-font size; Quarto's Typst writer would turn that into an absolute `12pt`,
-under half a 27pt A1 body, with no warning at render time. This extension
-drops `font-size` from table CSS so the table inherits the body size. Every
-other CSS property still reaches the writer, unlike Quarto's own
-`css-property-processing: none` which discards all of them — so a `gt` table
-keeps gt's colors and row strokes rather than picking up the poster theme's
-header color and booktabs rules. Use `tinytable` if you want the theme.
+**`gt` works and picks up the theme.** It emits HTML carrying a screen's worth
+of CSS: a pixel font size that Quarto's Typst writer would turn into an
+absolute `12pt` — under half a 27pt A1 body, with no warning at render time —
+plus gt's own greys, borders and pixel padding. This extension drops the
+properties the poster theme should be deciding (type, color, rules, spacing)
+so a `gt` table renders the same as a pipe table. Column alignment and
+`font-variant-numeric: tabular-nums` are deliberately kept, which is why this
+strips by property name rather than using Quarto's all-or-nothing
+`css-property-processing: none`.
+
+If you styled a `gt` table on purpose and want that styling on the poster, set
+`table-css` (below) to keep it.
 
 **`kableExtra`'s `kbl()` does not render at all.** Quarto stops the render with
 *"Functions that produce HTML output found in document targeting typst
@@ -306,10 +310,21 @@ package. `knitr::kable()` on its own is unaffected.
 **`flextable` rasterizes.** Its Typst output is a PNG, which cannot inherit
 the body size and will pixelate at A0.
 
-Two escape hatches, neither a starting point:
+`table-css` under `poster:` controls how much of an HTML table's CSS is
+dropped:
 
-- `table-font-size: keep` under `poster:` — leave all table CSS sizes alone.
-- `typst:text:size` on an individual table — size that one deliberately.
+| Value | Effect |
+|-------|--------|
+| `theme` (default) | Drop type, color, rules and spacing — the table looks like the poster |
+| `size-only` | Drop just the font size — keeps the package's own look, at a readable size |
+| `keep` | Drop nothing |
+
+Alignment survives all three. `size-only` is the setting for a table you
+styled deliberately; `keep` will produce a table nobody can read from the
+aisle, so reach for it only to diagnose something.
+
+Per-table rather than per-poster, `typst:text:size` on an individual table
+sizes that one deliberately and exempts it from all of the above.
 
 Keep poster tables to about six rows and four columns. Past that, draw it.
 

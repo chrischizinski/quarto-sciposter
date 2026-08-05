@@ -53,19 +53,21 @@ screen. Quarto's Typst writer converts `font-size: 12px` to an absolute `9pt`,
 which against this poster's 27pt body is a third of the size, with no warning
 at render time.
 
-This extension drops `font-size` from table CSS so tables inherit the poster
-body size. Every other CSS property still reaches the writer — so a `gt` table
-renders at the right size but keeps gt's own colors and rules rather than the
-theme's.
+The size is only half of it: the same CSS carries the package's own colors,
+borders and pixel padding. This extension drops the properties the poster
+theme should be deciding — type, color, rules, spacing — so a `gt` table
+renders the same as a pipe table. Alignment is kept, since that is the table's
+meaning and not its decoration.
 
 `kableExtra`'s `kbl()` is a different failure: Quarto refuses to render it to
 Typst at all, before any filter runs.
 :::
 
-The table below asks for 12px. It renders at body size anyway.
+The table below asks for 12px and grey rules. It renders at body size in the
+theme's booktabs treatment anyway.
 
 ```{=html}
-<table style="font-size: 12px;">
+<table style="font-size: 12px; border: 2px solid #D3D3D3; color: #777777;">
 <thead><tr><th>Gear</th><th>Sets</th></tr></thead>
 <tbody>
 <tr><td>Gill net</td><td>48</td></tr>
@@ -76,10 +78,20 @@ The table below asks for 12px. It renders at body size anyway.
 
 # Opting out
 
-Set `table-font-size: keep` under `poster:` to leave CSS sizes alone, or put
-`typst:text:size` on an individual table to size it deliberately. Both are
-escape hatches, not starting points: a table nobody can read from the aisle
-is worse than no table.
+`table-css` under `poster:` sets how much of an HTML table's CSS is dropped:
+
+| Value | Effect |
+|-------|--------|
+| `theme` | Type, color, rules and spacing come from the poster |
+| `size-only` | Only the font size is dropped |
+| `keep` | Nothing is dropped |
+
+`theme` is the default and the right answer for a table you did not style on
+purpose. `size-only` keeps a deliberately styled table's look at a size people
+can actually read. `keep` will produce a table nobody can read from the aisle.
+
+Per table, `typst:text:size` sizes one deliberately and exempts it from all of
+this.
 
 # Choosing a source
 

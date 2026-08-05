@@ -11,8 +11,8 @@
 --   ::: {#refs}         -> #refs-section(...)[ ... ] per poster.refs
 --     (flow | box | none)
 --
--- It also drops CSS `font-size` from tables so they inherit the poster body
--- size; see strip_table_font_size below.
+-- It also drops the CSS an HTML table brings with it, so the table inherits
+-- the poster's type, colour and rules; see strip_table_css below.
 
 if FORMAT ~= "typst" then
   return {}
@@ -25,16 +25,18 @@ local function wrap(div, open)
   return blocks
 end
 
--- "inherit" (default) strips CSS font-size off tables; "keep" leaves it alone.
-local table_font_size = "inherit"
+-- How much of an HTML table's CSS to drop so it looks like the poster:
+-- "theme" (default) strips the presentation properties, "size-only" strips
+-- just the font size, "keep" strips nothing. See strip_css below.
+local table_css = "theme"
 
 local function read_meta(meta)
   local poster = meta["poster"]
   if not poster then
     return
   end
-  if poster["table-font-size"] then
-    table_font_size = pandoc.utils.stringify(poster["table-font-size"])
+  if poster["table-css"] then
+    table_css = pandoc.utils.stringify(poster["table-css"])
   end
   -- Reference styling happens typst-side (show rule on <refs>): filters run
   -- before citeproc fills the div, so wrapping it here is impossible.
@@ -69,18 +71,56 @@ local function read_meta(meta)
   return meta
 end
 
--- HTML tables from gt/kableExtra carry `font-size` in CSS pixels sized for a
--- screen. Quarto's Typst writer converts those to absolute points (12px ->
--- 9pt), which on an A1 poster is a third of the 27pt body — unreadable at
--- viewing distance, with no warning. Dropping only the `font-size`
--- declarations lets the table inherit the poster body size while every other
--- CSS property (colours, borders, alignment) still reaches the writer;
--- Quarto's own `css-property-processing: none` would discard all of them.
+-- An HTML table brings a screen's worth of CSS with it. `gt` is the case that
+-- matters: it sets a font size in pixels, which Quarto's Typst writer turns
+-- into absolute points (16px -> 12pt) — under half an A1 poster's 27pt body,
+-- unreadable at viewing distance and with no warning. It also paints its own
+-- greys, borders and pixel padding, so a gt table that renders at the right
+-- size still arrives looking like gt rather than like the poster around it.
 --
+-- Quarto's own `css-property-processing: none` is all-or-nothing and would
+-- also discard column alignment, so this drops properties by name instead.
+--
+-- Everything omitted from both lists below is passed through, which is the
+-- point: alignment survives, and so does `font-variant-numeric: tabular-nums`,
+-- which is exactly what a column of figures wants.
+local size_only = {
+  ["font-size"] = true,
+}
+
+-- Presentation the poster theme should be deciding instead: type, colour,
+-- rules and spacing. Prefixes cover the longhand families (`border-top-color`,
+-- `padding-left`, and so on).
+local theme_owned = {
+  ["font-family"] = true,
+  ["font-size"] = true,
+  ["font-weight"] = true,
+  ["font-style"] = true,
+  ["color"] = true,
+  ["background-color"] = true,
+  ["line-height"] = true,
+}
+local theme_owned_prefixes = { "border", "padding", "margin" }
+
+local function is_stripped(property)
+  if table_css == "size-only" then
+    return size_only[property] == true
+  end
+  if theme_owned[property] then
+    return true
+  end
+  for _, prefix in ipairs(theme_owned_prefixes) do
+    if property:sub(1, #prefix) == prefix then
+      return true
+    end
+  end
+  return false
+end
+
 -- An explicit `typst:text:size` is the author saying they meant it, so those
--- elements are left untouched, as is everything under
--- `poster.table-font-size: keep`.
-local function strip_css_font_size(attr)
+-- elements are left untouched, as is everything under `poster.table-css:
+-- keep`.
+local function strip_css(attr)
   if not attr or not attr.attributes then
     return
   end
@@ -93,7 +133,7 @@ local function strip_css_font_size(attr)
     local property = decl:match("^%s*([%w%-]+)%s*:")
     -- `font` is the shorthand that can also carry a size; it is not emitted by
     -- gt or kableExtra, so it is passed through rather than parsed.
-    if property == nil or property:lower() ~= "font-size" then
+    if property == nil or not is_stripped(property:lower()) then
       kept[#kept + 1] = decl
     end
   end
@@ -104,16 +144,16 @@ local function strip_css_font_size(attr)
   end
 end
 
-local function strip_table_font_size(tbl)
-  if table_font_size == "keep" then
+local function strip_table_css(tbl)
+  if table_css == "keep" then
     return
   end
-  strip_css_font_size(tbl.attr)
+  strip_css(tbl.attr)
   local function walk_rows(rows)
     for _, row in ipairs(rows) do
-      strip_css_font_size(row.attr)
+      strip_css(row.attr)
       for _, cell in ipairs(row.cells) do
-        strip_css_font_size(cell.attr)
+        strip_css(cell.attr)
       end
     end
   end
@@ -181,5 +221,5 @@ end
 -- Meta after blocks, so use two passes.
 return {
   { Meta = read_meta },
-  { Div = map_div, Table = strip_table_font_size },
+  { Div = map_div, Table = strip_table_css },
 }
