@@ -120,6 +120,9 @@
     // own after `table.header`), while the top and bottom rules are drawn by a
     // block wrapped around the table — a cell `stroke` closure is given only
     // `(x, y)` and so cannot tell which row is last.
+    //
+    // `table-rule-args` applies only to tables that do not rule themselves;
+    // see the `show table` rule for how the two are told apart.
     table-args: (stroke: none, inset: (x: 0.5em, y: 0.45em), fill: none),
     table-rule-args: (stroke: (top: 1.2pt + fg, bottom: 1.2pt + fg)),
     table-header-text-args: body-font + (fill: accent, weight: "bold"),
@@ -581,7 +584,19 @@
   show table.cell.where(y: 0): set text(..th.table-header-text-args)
   // `block` sizes to its content, so the top and bottom rules land on the
   // table's own width rather than the column's.
-  show table: it => block(..(inset: (y: 0.2em)) + th.table-rule-args, it)
+  //
+  // Skip the wrapper for a table that already draws its own top rule: that is
+  // a table arriving with a full booktabs set (tinytable emits an explicit
+  // `table.hline(y: 0)`), and wrapping it in ours doubles the top and bottom.
+  // Quarto's pipe tables emit only a bare `table.hline()` for the header
+  // separator, with no `y`, so they still get the wrapper.
+  show table: it => {
+    let own-rules = it.children.any(c =>
+      c.func() == table.hline and c.fields().at("y", default: auto) == 0)
+    if own-rules { it } else {
+      block(..(inset: (y: 0.2em)) + th.table-rule-args, it)
+    }
+  }
   show figure.caption: it => {
     set text(..(size: 0.75 * base-font-size) + th.caption-text-args)
     set par(justify: false)
