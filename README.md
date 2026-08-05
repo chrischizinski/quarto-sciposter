@@ -252,12 +252,17 @@ computed in Typst; check it with `pdftotext out.pdf - | wc -w` and aim under
 
 ## Tables
 
+**Short version: use a pipe table, `knitr::kable()`, or `tinytable`. Avoid
+`kableExtra` and `flextable`.** `gt` works but keeps its own styling instead
+of the poster's.
+
 Tables inherit the poster body size and are drawn booktabs-style: a rule
 above the header, one below it, one under the last row, nothing else. A full
 grid at poster stroke weights cages the numbers and reads as texture from
 three metres away.
 
 What a table package emits for Typst decides whether it works on a poster.
+Each row below was checked by rendering it through this extension.
 
 | Source | Emits | Poster-safe |
 |--------|-------|-------------|
@@ -266,6 +271,16 @@ What a table package emits for Typst decides whether it works on a poster.
 | `gt` | HTML + CSS | Yes, via this extension's filter |
 | `kableExtra`'s `kbl()` | HTML | No — Quarto refuses to render it |
 | `flextable` | a raster PNG | No |
+
+Only one of those failures announces itself, so if a table looks wrong:
+
+| Symptom | Cause |
+|---------|-------|
+| Render aborts, *"Functions that produce HTML output…"* | `kableExtra::kbl()` |
+| Table is tiny — roughly a third of the body size | A CSS font size survived; see the escape hatches below |
+| Table is blurry when you zoom the PDF | `flextable` — it is a PNG, not text |
+| Table is the right size but the wrong colors | `gt`, keeping gt's styling |
+| Rules doubled above the header or under the last row | A table drawing its own rules that this template did not recognise; file an issue |
 
 **`tinytable` is the recommendation for R tables** — `tt()` emits a native
 Typst table that inherits the poster body size and picks up the theme's header
