@@ -47,6 +47,24 @@ jobs:
           fi
           echo "no absolute table size emitted"
 
+      # A guard that cannot fail is not a guard. The fixture renders with
+      # `table-css: keep`, so the size the grep looks for is still there; if
+      # this step stops finding one, the check above is passing vacuously.
+      # Testing the pattern rather than the packages is deliberate — it is the
+      # emission shape that broke before, and reproducing it from raw HTML
+      # costs nothing, where installing R and gt to produce the same string
+      # would cost minutes on every run.
+      - name: Check the guard can still fail
+        run: |
+          quarto render tests/table-guard.qmd \
+            --to sciposter-typst --metadata keep-typ=true
+          if grep -qE 'set text\([^;]*size: [0-9.]+pt[^;]*\);table\(' tests/table-guard.typ; then
+            echo "guard fires on the fixture, as it must"
+          else
+            echo "guard did NOT fire on a table that kept its CSS size"
+            exit 1
+          fi
+
       - name: Check page dimensions
         run: |
           sudo apt-get install -y poppler-utils

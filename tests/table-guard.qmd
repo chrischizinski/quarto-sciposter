@@ -1,0 +1,33 @@
+---
+# Negative control for the render-check table guard. Not an example: this
+# poster exists to fail the grep that every other poster must pass. It lives
+# outside examples/ for that reason, and is listed in .quartoignore so it does
+# not ship with the extension.
+#
+# `table-css: keep` leaves the CSS below intact, so Quarto's Typst writer
+# emits the absolute size the guard looks for. If rendering this stops
+# producing a hit, the guard has stopped working and the posters passing it
+# are proving nothing — which is how a guard that never matched gt shipped
+# green once already.
+#
+# The `font-family` matters as much as the size: gt writes the font list
+# first, so the emission is `set text(font: (...), size: 12pt);table(` and a
+# pattern anchored on `size:` following `set text(` misses it.
+title: "Table guard fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a1
+      columns: 1
+      table-css: keep
+---
+
+```{=html}
+<table style="font-family: Roboto, Helvetica, sans-serif; font-size: 12px;">
+<thead><tr><th>Gear</th><th>Sets</th></tr></thead>
+<tbody>
+<tr><td>Gill net</td><td>48</td></tr>
+<tr><td>Trap net</td><td>31</td></tr>
+</tbody>
+</table>
+```
