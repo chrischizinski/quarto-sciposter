@@ -389,3 +389,7 @@ the poster size.
 - [`examples/python.qmd`](examples/python.qmd) — matplotlib, seaborn and plotnine under the Jupyter engine
 - [`examples/qr-codes.qmd`](examples/qr-codes.qmd) — QR codes at several sizes, with labels
 - [`examples/tables.qmd`](examples/tables.qmd) — table styling and the HTML/CSS font-size trap
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md).
