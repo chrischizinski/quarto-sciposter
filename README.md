@@ -323,6 +323,16 @@ Alignment survives all three. `size-only` is the setting for a table you
 styled deliberately; `keep` will produce a table nobody can read from the
 aisle, so reach for it only to diagnose something.
 
+Dropping a font size passes without comment — nobody sets `12px` meaning
+"illegible at two metres". Dropping colors or borders prints a warning at
+render time, since that styling may well have been deliberate:
+
+```
+sciposter: replaced a table's own colors, borders or spacing with the poster
+theme. Set `table-css: size-only` under `poster:` to keep the table's styling
+at a readable size.
+```
+
 Per-table rather than per-poster, `typst:text:size` on an individual table
 sizes that one deliberately and exempts it from all of the above.
 

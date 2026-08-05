@@ -117,6 +117,12 @@ local function is_stripped(property)
   return false
 end
 
+-- Dropping a font size silently is fair: nobody sets 12px meaning "illegible
+-- at two metres". Dropping colours and borders is not — that may well have
+-- been deliberate, and a poster that quietly ignores it is the kind of thing
+-- an author only notices at the print shop. Warn once per render instead.
+local dropped_styling = false
+
 -- An explicit `typst:text:size` is the author saying they meant it, so those
 -- elements are left untouched, as is everything under `poster.table-css:
 -- keep`.
@@ -135,6 +141,8 @@ local function strip_css(attr)
     -- gt or kableExtra, so it is passed through rather than parsed.
     if property == nil or not is_stripped(property:lower()) then
       kept[#kept + 1] = decl
+    elseif property:lower() ~= "font-size" then
+      dropped_styling = true
     end
   end
   if #kept == 0 then
@@ -217,9 +225,27 @@ local function map_div(div)
   end
 end
 
+local function warn_dropped_styling()
+  if not dropped_styling then
+    return
+  end
+  local warn = quarto and quarto.log and quarto.log.warning
+  local msg = "sciposter: replaced a table's own colors, borders or spacing "
+    .. "with the poster theme. Set `table-css: size-only` under `poster:` to "
+    .. "keep the table's styling at a readable size."
+  if warn then
+    warn(msg)
+  else
+    io.stderr:write(msg .. "\n")
+  end
+end
+
 -- Meta must be read before divs are mapped; a single filter table runs
--- Meta after blocks, so use two passes.
+-- Meta after blocks, so use two passes. The warning needs a third: Pandoc
+-- runs last within a pass, but only once every Table in that pass has been
+-- walked.
 return {
   { Meta = read_meta },
   { Div = map_div, Table = strip_table_css },
+  { Pandoc = warn_dropped_styling },
 }
