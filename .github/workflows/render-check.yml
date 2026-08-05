@@ -29,16 +29,20 @@ jobs:
           quarto render examples/qr-codes.qmd --to sciposter-typst
           quarto render examples/tables.qmd --to sciposter-typst --metadata keep-typ=true
 
-      # tables.qmd contains an HTML table asking for `font-size: 12px`. The
-      # Lua filter must strip it so the table inherits the ~27pt poster body;
-      # left in, Quarto's writer emits `set text(size: 9pt)` and the table is
-      # unreadable at distance with no render-time warning.
+      # No table should carry a size of its own: on an A1 poster an absolute
+      # 9-12pt is a third of the ~27pt body, unreadable at distance, and
+      # nothing warns at render time. Two sources produce one, and the grep
+      # catches both — the Lua filter stripping CSS `font-size` off HTML
+      # tables, and gt, which emits Typst directly and hardcodes a size the
+      # filter never sees.
       # Match the emission itself, not the number: "9pt" also occurs in the
       # template's draft panel and in the poster's own prose about this trap.
-      - name: Check table CSS font-size is stripped
+      # The declarations before `size:` vary (gt leads with `font:`), so match
+      # across them rather than requiring `size:` first.
+      - name: Check no table carries an absolute font size
         run: |
-          if grep -qE 'set text\(size: [0-9.]+pt.*\);table\(' examples/tables.typ; then
-            echo "table CSS font-size survived the filter"
+          if grep -qE 'set text\([^;]*size: [0-9.]+pt[^;]*\);table\(' examples/tables.typ; then
+            echo "a table carries its own absolute font size"
             exit 1
           fi
           echo "no absolute table size emitted"

@@ -257,13 +257,30 @@ above the header, one below it, one under the last row, nothing else. A full
 grid at poster stroke weights cages the numbers and reads as texture from
 three metres away.
 
-**Markdown pipe tables and `knitr::kable()` are the safe path** — both emit a
-Typst table carrying no size of its own.
+What a table package emits for Typst decides whether it works on a poster.
 
-**HTML tables are the trap.** `gt` and `kableExtra` emit CSS sized for a
-screen, and Quarto's Typst writer converts `font-size: 12px` to an absolute
-`9pt`. Against a 27pt A1 body that is a third of the size, with no warning at
-render time. This extension drops `font-size` from table CSS so the table
+| Source | Emits | Poster-safe |
+|--------|-------|-------------|
+| Pipe table, `knitr::kable()` | Typst table, no size of its own | Yes |
+| `tinytable` | Typst table, no size of its own | Yes |
+| `gt` | Typst, hardcoded `12pt` | No |
+| `flextable` | a raster PNG | No |
+
+**`tinytable` is the recommendation for R tables** — `tt()` emits a native
+Typst table that inherits the poster body size and picks up the theme's header
+color. Pipe tables and `knitr::kable()` are equally safe and need no package.
+
+**`gt` hardcodes a size this extension cannot reach.** It emits Typst
+directly — `set text(font: (...), size: 12pt)` — rather than a table this
+extension's filter can rewrite, and against a 27pt A1 body that is under half
+the size, with no warning at render time. Use `tinytable` instead.
+
+**`flextable` rasterizes.** Its Typst output is a PNG, which cannot inherit
+the body size and will pixelate at A0.
+
+**HTML tables lose their CSS size.** `kableExtra` and anything else emitting
+HTML carry CSS sized for a screen, which Quarto's Typst writer turns into
+absolute points. This extension drops `font-size` from table CSS so the table
 inherits the body size; every other CSS property (colors, borders, alignment)
 still reaches the writer, unlike Quarto's own `css-property-processing: none`,
 which discards all of them.
