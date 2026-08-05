@@ -110,6 +110,20 @@
     takeaway-label-text-args: body-font
       + (fill: on-primary, weight: "medium", tracking: 0.08em),
 
+    // Booktabs rules, not a grid. Typst's default table boxes every cell,
+    // which at poster stroke-to-type ratios reads as a cage and competes with
+    // the numbers for attention. Horizontal rules alone let the eye track
+    // across a row at 2m; verticals are what column alignment is for.
+    //
+    // The rules are split across two dicts because they come from two places:
+    // Typst draws the header separator (Quarto emits a `table.hline()` of its
+    // own after `table.header`), while the top and bottom rules are drawn by a
+    // block wrapped around the table — a cell `stroke` closure is given only
+    // `(x, y)` and so cannot tell which row is last.
+    table-args: (stroke: none, inset: (x: 0.5em, y: 0.45em), fill: none),
+    table-rule-args: (stroke: (top: 1.2pt + fg, bottom: 1.2pt + fg)),
+    table-header-text-args: body-font + (fill: accent, weight: "bold"),
+
     refs-box-args: (fill: box-bg, radius: 4pt, inset: 0.25in),
     footer-box-args: (fill: accent),
     footer-text-args: body-font + (fill: on-primary),
@@ -560,6 +574,14 @@
     text(..(size: 1.25 * base-font-size) + th.subheading-text-args, it.body),
   )
   show link: set text(..th.link-text-args)
+  // Tables inherit the body size rather than carrying one of their own: a
+  // poster table is read at the same distance as the prose beside it. The Lua
+  // filter drops CSS `font-size` off HTML tables for the same reason.
+  set table(..th.table-args)
+  show table.cell.where(y: 0): set text(..th.table-header-text-args)
+  // `block` sizes to its content, so the top and bottom rules land on the
+  // table's own width rather than the column's.
+  show table: it => block(..(inset: (y: 0.2em)) + th.table-rule-args, it)
   show figure.caption: it => {
     set text(..(size: 0.75 * base-font-size) + th.caption-text-args)
     set par(justify: false)

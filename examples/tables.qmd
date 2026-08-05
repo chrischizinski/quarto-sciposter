@@ -1,0 +1,93 @@
+---
+title: "Tables at Poster Scale"
+subtitle: "Markdown, knitr::kable, and the HTML/CSS font-size trap"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+format:
+  sciposter-typst:
+    poster:
+      size: a1
+      columns: 2
+      theme: unl
+      footer:
+        left: "Rendered with Quarto + Typst"
+---
+
+# Markdown tables
+
+A pipe table carries no styling of its own, so it inherits the poster body
+size and the theme's rule and header treatment. This is the safe default.
+
+| Reservoir     | Effort (h) | Catch | CPUE |
+|---------------|-----------:|------:|-----:|
+| Branched Oak  |       1240 |   388 | 0.31 |
+| Pawnee        |        980 |   214 | 0.22 |
+| Wagon Train   |       1510 |   602 | 0.40 |
+
+Tables are drawn booktabs-style — a rule above the header, one below it, one
+under the last row, and nothing else. A full grid at poster stroke weights
+cages the numbers and reads as texture from three metres away.
+
+# Tables from R
+
+`knitr::kable()` emits a markdown pipe table for Typst output, so it lands in
+the same safe path and renders identically to the one above:
+
+```r
+knitr::kable(catch, digits = 1)
+```
+
+| Species | N | Mean length (mm) |
+|---------|--:|-----------------:|
+| Walleye | 142 | 412.6 |
+| White Bass | 318 | 268.1 |
+| Channel Catfish | 96 | 501.3 |
+
+# The HTML/CSS trap
+
+::: {.alert title="Why this matters"}
+Packages that emit **HTML** tables — `gt`, `kableExtra` — carry CSS sized for
+a screen. Quarto's Typst writer converts `font-size: 12px` to an absolute
+`9pt`, which against this poster's 27pt body is a third of the size, with no
+warning at render time.
+
+This extension drops `font-size` from table CSS so tables inherit the poster
+body size. Every other CSS property still reaches the writer.
+:::
+
+The table below asks for 12px. It renders at body size anyway.
+
+```{=html}
+<table style="font-size: 12px;">
+<thead><tr><th>Gear</th><th>Sets</th></tr></thead>
+<tbody>
+<tr><td>Gill net</td><td>48</td></tr>
+<tr><td>Trap net</td><td>31</td></tr>
+</tbody>
+</table>
+```
+
+# Opting out
+
+Set `table-font-size: keep` under `poster:` to leave CSS sizes alone, or put
+`typst:text:size` on an individual table to size it deliberately. Both are
+escape hatches, not starting points: a table nobody can read from the aisle
+is worse than no table.
+
+# Choosing a source
+
+| Source | Emits | Safe at poster scale |
+|--------|-------|----------------------|
+| Pipe table | Typst table | Yes |
+| `knitr::kable()` | Typst table | Yes |
+| `gt`, `kableExtra` | HTML + CSS | Only with this filter |
+
+::: {.takeaway label="Rule of thumb"}
+Six rows, four columns. Past that, draw it.
+:::
+
+A poster table is scanned, not studied. Anything that needs more rows than a
+reader can hold in view at once belongs in a figure — or in the paper the QR
+code points to.

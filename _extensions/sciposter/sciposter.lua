@@ -10,6 +10,9 @@
 --     optional size="..." and label="..." attributes
 --   ::: {#refs}         -> #refs-section(...)[ ... ] per poster.refs
 --     (flow | box | none)
+--
+-- It also drops CSS `font-size` from tables so they inherit the poster body
+-- size; see strip_table_font_size below.
 
 if FORMAT ~= "typst" then
   return {}
@@ -22,10 +25,16 @@ local function wrap(div, open)
   return blocks
 end
 
+-- "inherit" (default) strips CSS font-size off tables; "keep" leaves it alone.
+local table_font_size = "inherit"
+
 local function read_meta(meta)
   local poster = meta["poster"]
   if not poster then
     return
+  end
+  if poster["table-font-size"] then
+    table_font_size = pandoc.utils.stringify(poster["table-font-size"])
   end
   -- Reference styling happens typst-side (show rule on <refs>): filters run
   -- before citeproc fills the div, so wrapping it here is impossible.
@@ -58,6 +67,63 @@ local function read_meta(meta)
     meta["poster"] = poster
   end
   return meta
+end
+
+-- HTML tables from gt/kableExtra carry `font-size` in CSS pixels sized for a
+-- screen. Quarto's Typst writer converts those to absolute points (12px ->
+-- 9pt), which on an A1 poster is a third of the 27pt body — unreadable at
+-- viewing distance, with no warning. Dropping only the `font-size`
+-- declarations lets the table inherit the poster body size while every other
+-- CSS property (colours, borders, alignment) still reaches the writer;
+-- Quarto's own `css-property-processing: none` would discard all of them.
+--
+-- An explicit `typst:text:size` is the author saying they meant it, so those
+-- elements are left untouched, as is everything under
+-- `poster.table-font-size: keep`.
+local function strip_css_font_size(attr)
+  if not attr or not attr.attributes then
+    return
+  end
+  local style = attr.attributes["style"]
+  if not style or attr.attributes["typst:text:size"] then
+    return
+  end
+  local kept = {}
+  for decl in style:gmatch("[^;]+") do
+    local property = decl:match("^%s*([%w%-]+)%s*:")
+    -- `font` is the shorthand that can also carry a size; it is not emitted by
+    -- gt or kableExtra, so it is passed through rather than parsed.
+    if property == nil or property:lower() ~= "font-size" then
+      kept[#kept + 1] = decl
+    end
+  end
+  if #kept == 0 then
+    attr.attributes["style"] = nil
+  else
+    attr.attributes["style"] = table.concat(kept, ";") .. ";"
+  end
+end
+
+local function strip_table_font_size(tbl)
+  if table_font_size == "keep" then
+    return
+  end
+  strip_css_font_size(tbl.attr)
+  local function walk_rows(rows)
+    for _, row in ipairs(rows) do
+      strip_css_font_size(row.attr)
+      for _, cell in ipairs(row.cells) do
+        strip_css_font_size(cell.attr)
+      end
+    end
+  end
+  walk_rows(tbl.head.rows)
+  walk_rows(tbl.foot.rows)
+  for _, body in ipairs(tbl.bodies) do
+    walk_rows(body.head)
+    walk_rows(body.body)
+  end
+  return tbl
 end
 
 local function map_div(div)
@@ -115,5 +181,5 @@ end
 -- Meta after blocks, so use two passes.
 return {
   { Meta = read_meta },
-  { Div = map_div },
+  { Div = map_div, Table = strip_table_font_size },
 }

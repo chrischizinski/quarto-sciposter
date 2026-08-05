@@ -75,6 +75,7 @@ logos:
 | `base-font-size` | auto | Body text size; derived from poster width if unset (see Typography) |
 | `title-font-size` | auto | Poster title size; `2.3 ×` body size if unset |
 | `palette` | theme default | Figure colors, shared with R chunks (see Figure colors) |
+| `table-font-size` | `inherit` | `keep` leaves CSS font sizes on HTML tables alone (see Tables) |
 | `draft` | `false` | Overlay a diagnostics panel on the render (see Draft mode) |
 
 `logos.left` / `logos.right` (top-level keys) take lists of image paths —
@@ -249,6 +250,33 @@ computed in Typst; check it with `pdftotext out.pdf - | wc -w` and aim under
   `![...](img.png){width=50%}`.
 - Wrap a figure in `.full-width` to span the poster.
 
+## Tables
+
+Tables inherit the poster body size and are drawn booktabs-style: a rule
+above the header, one below it, one under the last row, nothing else. A full
+grid at poster stroke weights cages the numbers and reads as texture from
+three metres away.
+
+**Markdown pipe tables and `knitr::kable()` are the safe path** — both emit a
+Typst table carrying no size of its own.
+
+**HTML tables are the trap.** `gt` and `kableExtra` emit CSS sized for a
+screen, and Quarto's Typst writer converts `font-size: 12px` to an absolute
+`9pt`. Against a 27pt A1 body that is a third of the size, with no warning at
+render time. This extension drops `font-size` from table CSS so the table
+inherits the body size; every other CSS property (colors, borders, alignment)
+still reaches the writer, unlike Quarto's own `css-property-processing: none`,
+which discards all of them.
+
+Two escape hatches, neither a starting point:
+
+- `table-font-size: keep` under `poster:` — leave all table CSS sizes alone.
+- `typst:text:size` on an individual table — size that one deliberately.
+
+Keep poster tables to about six rows and four columns. Past that, draw it.
+
+See `examples/tables.qmd`.
+
 ## References
 
 Add `bibliography: refs.bib` and cite as usual. Place the section anywhere:
@@ -276,3 +304,5 @@ the poster size.
 - [`template.qmd`](template.qmd) — 48×36 landscape, UNL theme, logos, boxes
 - [`examples/a0-portrait.qmd`](examples/a0-portrait.qmd) — A0 portrait, generic theme, references
 - [`examples/r-figures.qmd`](examples/r-figures.qmd) — ggplot2 figures in columns and full-width
+- [`examples/qr-codes.qmd`](examples/qr-codes.qmd) — QR codes at several sizes, with labels
+- [`examples/tables.qmd`](examples/tables.qmd) — table styling and the HTML/CSS font-size trap
