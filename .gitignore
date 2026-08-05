@@ -4,6 +4,9 @@
 /examples/*.pdf
 /examples/*.typ
 /examples/*_files/
+/tests/*.pdf
+/tests/*.typ
+/tests/*_files/
 .quarto/
 
 /.quarto/

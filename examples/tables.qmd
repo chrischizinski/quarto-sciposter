@@ -67,7 +67,7 @@ The table below asks for 12px and grey rules. It renders at body size in the
 theme's booktabs treatment anyway.
 
 ```{=html}
-<table style="font-size: 12px; border: 2px solid #D3D3D3; color: #777777;">
+<table style="font-family: Roboto, Helvetica, sans-serif; font-size: 12px; border: 2px solid #D3D3D3; color: #777777;">
 <thead><tr><th>Gear</th><th>Sets</th></tr></thead>
 <tbody>
 <tr><td>Gill net</td><td>48</td></tr>

@@ -1,4 +1,5 @@
 examples/
+tests/
 .github/
 README.md
 *.pdf
