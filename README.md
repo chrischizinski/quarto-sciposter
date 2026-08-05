@@ -263,27 +263,33 @@ What a table package emits for Typst decides whether it works on a poster.
 |--------|-------|-------------|
 | Pipe table, `knitr::kable()` | Typst table, no size of its own | Yes |
 | `tinytable` | Typst table, no size of its own | Yes |
-| `gt` | Typst, hardcoded `12pt` | No |
+| `gt` | HTML + CSS | Yes, via this extension's filter |
+| `kableExtra`'s `kbl()` | HTML | No — Quarto refuses to render it |
 | `flextable` | a raster PNG | No |
 
 **`tinytable` is the recommendation for R tables** — `tt()` emits a native
 Typst table that inherits the poster body size and picks up the theme's header
-color. Pipe tables and `knitr::kable()` are equally safe and need no package.
+color and booktabs rules. Pipe tables and `knitr::kable()` are equally safe and
+need no package.
 
-**`gt` hardcodes a size this extension cannot reach.** It emits Typst
-directly — `set text(font: (...), size: 12pt)` — rather than a table this
-extension's filter can rewrite, and against a 27pt A1 body that is under half
-the size, with no warning at render time. Use `tinytable` instead.
+**`gt` works, with its own styling.** It emits HTML whose CSS carries a screen
+font size; Quarto's Typst writer would turn that into an absolute `12pt`,
+under half a 27pt A1 body, with no warning at render time. This extension
+drops `font-size` from table CSS so the table inherits the body size. Every
+other CSS property still reaches the writer, unlike Quarto's own
+`css-property-processing: none` which discards all of them — so a `gt` table
+keeps gt's colors and row strokes rather than picking up the poster theme's
+header color and booktabs rules. Use `tinytable` if you want the theme.
+
+**`kableExtra`'s `kbl()` does not render at all.** Quarto stops the render with
+*"Functions that produce HTML output found in document targeting typst
+output"* before any filter runs, so this extension cannot rescue it. Passing
+`format = "markdown"` sidesteps the guard by emitting a pipe table, but that
+discards the `kable_styling()` work that is the reason to reach for the
+package. `knitr::kable()` on its own is unaffected.
 
 **`flextable` rasterizes.** Its Typst output is a PNG, which cannot inherit
 the body size and will pixelate at A0.
-
-**HTML tables lose their CSS size.** `kableExtra` and anything else emitting
-HTML carry CSS sized for a screen, which Quarto's Typst writer turns into
-absolute points. This extension drops `font-size` from table CSS so the table
-inherits the body size; every other CSS property (colors, borders, alignment)
-still reaches the writer, unlike Quarto's own `css-property-processing: none`,
-which discards all of them.
 
 Two escape hatches, neither a starting point:
 

@@ -48,16 +48,18 @@ knitr::kable(catch, digits = 1)
 # The HTML/CSS trap
 
 ::: {.alert title="Why this matters"}
-Packages that emit **HTML** tables — `kableExtra` among them — carry CSS sized
-for a screen. Quarto's Typst writer converts `font-size: 12px` to an absolute
-`9pt`, which against this poster's 27pt body is a third of the size, with no
-warning at render time.
+Packages that emit **HTML** tables — `gt` among them — carry CSS sized for a
+screen. Quarto's Typst writer converts `font-size: 12px` to an absolute `9pt`,
+which against this poster's 27pt body is a third of the size, with no warning
+at render time.
 
 This extension drops `font-size` from table CSS so tables inherit the poster
-body size. Every other CSS property still reaches the writer.
+body size. Every other CSS property still reaches the writer — so a `gt` table
+renders at the right size but keeps gt's own colors and rules rather than the
+theme's.
 
-`gt` fails the same way for a different reason: it emits Typst directly,
-hardcoding `12pt`, so the filter never sees it. Use `tinytable` instead.
+`kableExtra`'s `kbl()` is a different failure: Quarto refuses to render it to
+Typst at all, before any filter runs.
 :::
 
 The table below asks for 12px. It renders at body size anyway.
@@ -86,8 +88,8 @@ is worse than no table.
 | Pipe table | Typst table | Yes |
 | `knitr::kable()` | Typst table | Yes |
 | `tinytable` | Typst table | Yes |
-| `kableExtra` | HTML + CSS | Only with this filter |
-| `gt` | Typst, hardcoded 12pt | No |
+| `gt` | HTML + CSS | Yes, with this filter |
+| `kableExtra` `kbl()` | HTML | No — render fails |
 | `flextable` | a raster PNG | No |
 
 ::: {.takeaway label="Rule of thumb"}

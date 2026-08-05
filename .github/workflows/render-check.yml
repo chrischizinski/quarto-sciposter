@@ -31,14 +31,14 @@ jobs:
 
       # No table should carry a size of its own: on an A1 poster an absolute
       # 9-12pt is a third of the ~27pt body, unreadable at distance, and
-      # nothing warns at render time. Two sources produce one, and the grep
-      # catches both — the Lua filter stripping CSS `font-size` off HTML
-      # tables, and gt, which emits Typst directly and hardcodes a size the
-      # filter never sees.
+      # nothing warns at render time. The Lua filter strips CSS `font-size`
+      # off HTML tables, which is what gt and hand-written HTML emit; this
+      # checks the filter actually ran.
       # Match the emission itself, not the number: "9pt" also occurs in the
       # template's draft panel and in the poster's own prose about this trap.
-      # The declarations before `size:` vary (gt leads with `font:`), so match
-      # across them rather than requiring `size:` first.
+      # The declarations before `size:` vary — Quarto writes the font list
+      # first when the source CSS set one — so match across them rather than
+      # requiring `size:` to come first.
       - name: Check no table carries an absolute font size
         run: |
           if grep -qE 'set text\([^;]*size: [0-9.]+pt[^;]*\);table\(' examples/tables.typ; then
