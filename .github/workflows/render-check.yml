@@ -17,8 +17,10 @@ jobs:
       - name: Install fonts
         run: sudo apt-get update && sudo apt-get install -y fonts-liberation
 
-      # examples/r-figures.qmd needs R + ggplot2; keep CI lean and render
-      # only the pure-markdown posters. The R example is exercised locally.
+      # examples/r-figures.qmd needs R + ggplot2, and examples/python.qmd
+      # needs matplotlib, seaborn and plotnine; keep CI lean and render only
+      # the pure-markdown posters. Both computed examples are exercised
+      # locally.
       # qr-codes.qmd is the only poster that resolves a Typst package
       # (tiaoma, fetched lazily on first use). Rendering it here is what
       # catches a package or registry breakage that no other example would.

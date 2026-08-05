@@ -221,12 +221,31 @@ ggplot(d, aes(x, y, color = grp)) +
 
 Both themes default to [Okabe-Ito](https://jfly.uni-koeln.de/color/), a
 colorblind-safe qualitative palette, reordered so the leading series matches
-the theme. R cannot see the Typst theme's built-in palette, so declare
-`poster.palette` explicitly when using R figures — that is what makes the YAML
-the single source. See `examples/r-figures.qmd`.
+the theme. Neither R nor Python can see the Typst theme's built-in palette, so
+declare `poster.palette` explicitly when computing figures — that is what makes
+the YAML the single source. See `examples/r-figures.qmd`.
 
 Keep figure `base_size` high enough that axis text survives being scaled into
 a column; it needs to be legible at the 1.5 m scan, not just in RStudio.
+
+### Python
+
+Everything above works under the Jupyter engine — figures come out as vector
+SVG, and `great_tables` goes through the same CSS path as `gt`. Two
+differences, neither of which warns:
+
+- **`poster.palette` has to be read out of the YAML.** There is no
+  `rmarkdown::metadata` equivalent, so the document parses its own front
+  matter, locating itself via `QUARTO_DOCUMENT_PATH` / `QUARTO_DOCUMENT_FILE`.
+- **Per-chunk `fig-width` is ignored.** Document-level `fig-width` reaches the
+  kernel, but a chunk-level one does not; size individual figures in Python
+  (`figsize=`, seaborn's `height`/`aspect`, plotnine's `figure_size`).
+
+Because figures are scaled to their column, a physically larger figure prints
+*smaller* labels. seaborn's `relplot` pads for an outside legend and so shrinks
+more than a bare matplotlib figure asking for the same nominal size.
+
+See `examples/python.qmd`.
 
 ## Draft mode
 
@@ -367,5 +386,6 @@ the poster size.
 - [`template.qmd`](template.qmd) — 48×36 landscape, UNL theme, logos, boxes
 - [`examples/a0-portrait.qmd`](examples/a0-portrait.qmd) — A0 portrait, generic theme, references
 - [`examples/r-figures.qmd`](examples/r-figures.qmd) — ggplot2 figures in columns and full-width
+- [`examples/python.qmd`](examples/python.qmd) — matplotlib, seaborn and plotnine under the Jupyter engine
 - [`examples/qr-codes.qmd`](examples/qr-codes.qmd) — QR codes at several sizes, with labels
 - [`examples/tables.qmd`](examples/tables.qmd) — table styling and the HTML/CSS font-size trap

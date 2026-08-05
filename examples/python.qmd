@@ -1,0 +1,158 @@
+---
+title: "Computed Figures from Python Chunks"
+subtitle: "matplotlib, seaborn and plotnine at poster scale"
+author:
+  - name: Christopher Chizinski
+    affiliations:
+      - name: School of Natural Resources, University of Nebraska–Lincoln
+format:
+  sciposter-typst:
+    poster:
+      size: "42x30"
+      columns: 3
+      theme: unl
+      # Same single source as the R example: the poster chrome and the
+      # Python chunks below both read these values.
+      palette:
+        - "#D55E00"
+        - "#0072B2"
+        - "#009E73"
+        - "#CC79A7"
+        - "#E69F00"
+        - "#56B4E9"
+      footer:
+        left: "Rendered with Quarto + Typst"
+        right: "github.com/chrischizinski"
+    # Document-level fig sizes DO reach the Jupyter kernel. Per-chunk ones do
+    # not — see "Sizing control".
+    fig-width: 5.5
+    fig-height: 3.5
+jupyter: python3
+---
+
+```{python}
+#| include: false
+# Read the palette out of this document's own YAML. Python has no equivalent
+# of R's `rmarkdown::metadata`, so the front matter is parsed directly;
+# QUARTO_DOCUMENT_PATH and QUARTO_DOCUMENT_FILE are set by Quarto, so the
+# document does not need to know its own name.
+import os, pathlib, yaml
+
+def sciposter_palette(n=None):
+    src = pathlib.Path(os.environ["QUARTO_DOCUMENT_PATH"],
+                       os.environ["QUARTO_DOCUMENT_FILE"]).read_text()
+    meta = yaml.safe_load(src.split("---")[1])
+    p = (meta.get("format", {}).get("sciposter-typst", {})
+             .get("poster", {}).get("palette"))
+    if not p:
+        p = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"]
+    return p if n is None else [p[i % len(p)] for i in range(n)]
+
+PAL = sciposter_palette(3)
+
+# Axis text is set once here rather than per figure. 18pt is a floor, not a
+# default: it has to survive being scaled into a column and still read at the
+# 1.5m scan tier.
+import matplotlib as mpl
+mpl.rcParams.update({"font.size": 18, "axes.labelsize": 18,
+                     "legend.fontsize": 16, "figure.autolayout": True})
+
+import numpy as np, pandas as pd
+rng = np.random.default_rng(1)
+LAKES = ["Branched Oak", "Pawnee", "Wagon Train"]
+df = pd.DataFrame({
+    "effort": rng.uniform(0, 10, 120),
+    "cpue": rng.normal(2, 0.6, 120),
+    "lake": rng.choice(LAKES, 120),
+})
+```
+
+# matplotlib
+
+Unsized figures fill their column, capped at `poster.fig-max-height`.
+
+```{python}
+#| echo: false
+#| fig-cap: "Column-width matplotlib scatter"
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots(figsize=(5.5, 3.5))
+for color, lake in zip(PAL, LAKES):
+    g = df[df.lake == lake]
+    ax.scatter(g.effort, g.cpue, color=color, s=60, label=lake)
+ax.set_xlabel("Effort (h)")
+ax.set_ylabel("CPUE")
+ax.legend(frameon=False, loc="upper center", ncol=3,
+          bbox_to_anchor=(0.5, 1.18))
+plt.show()
+```
+
+# Sizing control
+
+Sizing behaves differently under Jupyter than under knitr, and nothing warns:
+
+| Where | Effect |
+|-------|--------|
+| `fig-width` in document YAML | Works |
+| `#| fig-width:` on a chunk | **Ignored** |
+| `figsize=` in Python | Works — the only per-figure control |
+
+Figures are scaled to fit their column, so a physically *larger* figure is
+scaled down further and its labels print *smaller*. Keep dimensions near the
+column aspect and let the type follow.
+
+Output is vector SVG, so figures stay sharp at A0.
+
+# Reading the palette
+
+`poster.palette` is declared once in the YAML above and read back by the setup
+chunk, so figures and poster chrome cannot drift apart. R uses
+`rmarkdown::metadata`; Python has no equivalent, so the front matter is parsed
+directly, locating itself through the environment:
+
+```python
+pathlib.Path(os.environ["QUARTO_DOCUMENT_PATH"],
+             os.environ["QUARTO_DOCUMENT_FILE"])
+```
+
+See `examples/r-figures.qmd` for `.full-width` spans and the R equivalent.
+
+# seaborn
+
+`relplot` sizes through `height` and `aspect`, not `figsize`, and pads for an
+outside legend — which is why it scales down more than the panel above.
+
+Set the category order explicitly (`hue_order` here, `limits` in plotnine).
+Without it the same lake takes a different color in each panel, because the
+libraries order categories differently.
+
+```{python}
+#| echo: false
+#| fig-cap: "seaborn relplot with an explicit category order"
+import seaborn as sns
+sns.set_theme(style="whitegrid", rc={"font.size": 18, "axes.labelsize": 18})
+# hue_order is not optional on a poster: seaborn orders categories by first
+# appearance while pandas groupby sorts them, so without it the same lake
+# takes a different color here than in the matplotlib panel above.
+p = sns.relplot(data=df, x="effort", y="cpue", hue="lake", hue_order=LAKES,
+                palette=PAL, height=3.5, aspect=5.5 / 3.5, s=70)
+p.set_axis_labels("Effort (h)", "CPUE")
+plt.show()
+```
+
+# plotnine
+
+The ggplot2 port. `figure_size` is in inches.
+
+```{python}
+#| echo: false
+#| fig-cap: "plotnine with matched category limits"
+from plotnine import (ggplot, aes, geom_point, scale_color_manual, labs,
+                      theme_minimal, theme)
+(ggplot(df, aes("effort", "cpue", color="lake"))
+ + geom_point(size=3)
+ + scale_color_manual(values=PAL, limits=LAKES)
+ + labs(x="Effort (h)", y="CPUE", color="Lake")
+ + theme_minimal(base_size=18)
+ + theme(figure_size=(5.5, 2.6)))
+```
+
