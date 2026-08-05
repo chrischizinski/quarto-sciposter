@@ -10,7 +10,12 @@ file, commit, then tag to match.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `poster.credit` prints a small "Built with quarto-sciposter" line in a bottom
+  corner. `true` uses the bottom right; `bottom-left` and `bottom-right` choose
+  one. Off by default, so upgrading adds nothing to an existing poster. It
+  clears the footer bar when one is present.
 
 ## [0.1.0] — 2026-08-05
 
