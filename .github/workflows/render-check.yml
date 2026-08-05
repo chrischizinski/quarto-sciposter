@@ -19,17 +19,40 @@ jobs:
 
       # examples/r-figures.qmd needs R + ggplot2; keep CI lean and render
       # only the pure-markdown posters. The R example is exercised locally.
+      # qr-codes.qmd is the only poster that resolves a Typst package
+      # (tiaoma, fetched lazily on first use). Rendering it here is what
+      # catches a package or registry breakage that no other example would.
       - name: Render posters
         run: |
           quarto render template.qmd --to sciposter-typst
           quarto render examples/a0-portrait.qmd --to sciposter-typst
+          quarto render examples/qr-codes.qmd --to sciposter-typst
+          quarto render examples/tables.qmd --to sciposter-typst --metadata keep-typ=true
+
+      # No table should carry a size of its own: on an A1 poster an absolute
+      # 9-12pt is a third of the ~27pt body, unreadable at distance, and
+      # nothing warns at render time. The Lua filter strips CSS `font-size`
+      # off HTML tables, which is what gt and hand-written HTML emit; this
+      # checks the filter actually ran.
+      # Match the emission itself, not the number: "9pt" also occurs in the
+      # template's draft panel and in the poster's own prose about this trap.
+      # The declarations before `size:` vary — Quarto writes the font list
+      # first when the source CSS set one — so match across them rather than
+      # requiring `size:` to come first.
+      - name: Check no table carries an absolute font size
+        run: |
+          if grep -qE 'set text\([^;]*size: [0-9.]+pt[^;]*\);table\(' examples/tables.typ; then
+            echo "a table carries its own absolute font size"
+            exit 1
+          fi
+          echo "no absolute table size emitted"
 
       - name: Check page dimensions
         run: |
           sudo apt-get install -y poppler-utils
           pdfinfo template.pdf | grep -q "3456 x 2592" || { echo "template.pdf wrong size"; exit 1; }
           pdfinfo examples/a0-portrait.pdf | grep -q "A0" || { echo "a0-portrait.pdf wrong size"; exit 1; }
-          for f in template.pdf examples/a0-portrait.pdf; do
+          for f in template.pdf examples/a0-portrait.pdf examples/qr-codes.pdf examples/tables.pdf; do
             pages=$(pdfinfo "$f" | awk '/^Pages:/ {print $2}')
             [ "$pages" = "1" ] || { echo "$f overflowed to $pages pages"; exit 1; }
           done
