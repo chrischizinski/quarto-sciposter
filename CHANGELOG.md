@@ -10,12 +10,19 @@ file, commit, then tag to match.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0] — 2026-08-06
+
 ### Added
 
 - `poster.credit` prints a small "Built with quarto-sciposter" line in a bottom
   corner. `true` uses the bottom right; `bottom-left` and `bottom-right` choose
   one. Off by default, so upgrading adds nothing to an existing poster. It
   clears the footer bar when one is present.
+
+  Only the bottom corners are offered — the top edge of a poster is the title
+  bar, where a muted line disappears into the accent fill.
 
 ## [0.1.0] — 2026-08-05
 
@@ -73,5 +80,6 @@ Under the Jupyter engine, per-chunk `fig-width` is ignored while the
 document-level option works, and `poster.palette` must be read out of the front
 matter — there is no `rmarkdown::metadata` equivalent. See `examples/python.qmd`.
 
-[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.2.0
 [0.1.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.1.0
