@@ -415,6 +415,12 @@ local function map_div(div)
     if div.attributes["label"] then
       table.insert(args, "label: [" .. div.attributes["label"] .. "]")
     end
+    -- A vertical nudge for optical alignment against a neighbour; negative
+    -- values move the code up. See the comment on poster-qr for why this is
+    -- hand-set rather than computed.
+    if div.attributes["offset"] then
+      table.insert(args, "offset: " .. div.attributes["offset"])
+    end
     return pandoc.RawBlock("typst", "#poster-qr(" .. table.concat(args, ", ") .. ")")
   end
 
