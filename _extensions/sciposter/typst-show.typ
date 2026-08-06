@@ -49,6 +49,17 @@ $endif$
 $if(poster.theme-overrides-typst)$
   theme-overrides: $poster.theme-overrides-typst$,
 $endif$
+$-- A dict of lengths, so it takes the same route as theme-overrides.
+$if(poster.title-gaps-typst)$
+  title-gaps: $poster.title-gaps-typst$,
+$endif$
+$-- These two are plain strings; sciposter() maps them to Typst alignments.
+$if(poster.heading-align)$
+  heading-align: "$poster.heading-align$",
+$endif$
+$if(poster.stats-align)$
+  stats-align: "$poster.stats-align$",
+$endif$
 $-- Tri-state, so it is forwarded unconditionally: `$if()$` cannot tell an
 $-- absent key from an explicit `false`, and here they mean different things —
 $-- absent leaves the font's own ligature setting alone, false turns it off.

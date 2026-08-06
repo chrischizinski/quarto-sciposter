@@ -16,6 +16,13 @@ format:
       title-font-size: 80pt
       # One vertical rhythm for every deliberate unit of information.
       block-gap: "0.45in"
+      # Layout, not colour, so these sit here rather than in theme-overrides —
+      # that route merges dict into dict and cannot carry an alignment.
+      heading-align: center
+      stats-align: center
+      # Name one gap and the other two keep their defaults.
+      title-gaps:
+        author: "0.22in"
       # Code quieter than the prose beside it. 0.75-0.85 of body is usual.
       code-font-size: "22pt"
       code-fonts: ["DejaVu Sans Mono", "Menlo"]
@@ -93,6 +100,19 @@ either one contains.
 **Right cell.** Wider, by `widths`. Give `cols` instead for equal fractions,
 and wrap the whole div in `.full-width` to align across the poster.
 :::
+:::
+
+# Centred evidence
+
+`stats-align: center` centres the cells of the evidence strip. Left is the
+default, and reads better when the labels run past one line.
+
+::: {.stats label="At a glance"}
+**3** poster sizes
+
+**11** theme elements
+
+**0** forks required
 :::
 
 ::: {.col-break}

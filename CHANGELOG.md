@@ -12,6 +12,47 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.6.0] — 2026-08-06
+
+Three layout knobs, taken from a real fork. The AFS 2026 poster had been
+carrying these as local edits to its vendored copy of the template because
+nothing in a `.qmd` could reach them; with this release its fork is empty.
+
+### Added
+
+- `poster.heading-align` — `left` (default), `center` or `right` for the
+  level-1 section bars.
+- `poster.stats-align` — the same, for the cells of an evidence strip.
+- `poster.title-gaps` — a `{subtitle, author, affiliation}` map of the three
+  gaps running down the title bar, defaulting to `0.2in` / `0.35in` /
+  `0.18in`. The map merges over the defaults, so naming one gap leaves the
+  others alone.
+
+  Named gaps rather than one scale factor: a poster that has to tighten the
+  title bar rarely tightens it evenly. The case that produced this had six
+  authors, and the gap before the byline and the gap before the affiliations
+  wanted different numbers.
+
+An invalid alignment stops the render with a named error rather than falling
+back to `left`. A silently wrong alignment on a poster gets noticed at the
+printer.
+
+### Why these are poster options and not `theme-overrides`
+
+`theme-overrides` merges a dict INTO a dict (`th.at(key) + value`), so a bare
+alignment or length has no way through it. Beyond that, `heading-text-args` is
+spread into `text()`, which has no alignment parameter — the centring has to
+happen at the call site, one level out. They sit alongside `block-gap` and
+`logo-height`, which are the same kind of thing: layout, not colour.
+
+### Unchanged
+
+A poster that sets none of the three renders byte-identically to 0.5.0 —
+verified by pixel diff for `template.qmd`, `a0-portrait`, `tables`,
+`template-controls` and `qr-codes`. The `left` case returns its content
+unwrapped rather than passing through `align(left, ..)`, which is what keeps
+that true.
+
 ## [0.5.0] — 2026-08-06
 
 One control, and two holes in CI that adding it exposed.
@@ -242,7 +283,8 @@ Under the Jupyter engine, per-chunk `fig-width` is ignored while the
 document-level option works, and `poster.palette` must be read out of the front
 matter — there is no `rmarkdown::metadata` equivalent. See `examples/python.qmd`.
 
-[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.6.0
 [0.5.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.5.0
 [0.4.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.4.0
 [0.3.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.3.0

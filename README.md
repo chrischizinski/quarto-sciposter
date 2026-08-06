@@ -72,6 +72,9 @@ logos:
 | `code-ligatures` | font default | `false` turns off a coding font's ligatures |
 | `theme-overrides` | — | Per-element style overrides (see Overriding theme elements) |
 | `block-gap` | theme default | One vertical gap above and below every styled block |
+| `heading-align` | `left` | `left` \| `center` \| `right` for level-1 section bars |
+| `stats-align` | `left` | Same, for the cells of an evidence strip |
+| `title-gaps` | see Title bar | `{subtitle, author, affiliation}` gaps down the title bar |
 | `brand` | `true` | Set `false` to ignore the project's `_brand.yml` |
 | `logo-height` | `1.5in` | Height of every title-bar logo |
 | `footer` | — | String (centered) or `{left, center, right}` map |
@@ -344,6 +347,47 @@ The theme ships an asymmetric default on headings, more air above a section
 bar than below it. `block-gap` deliberately flattens that; a single gap is the
 point of asking for one. `theme-overrides` still wins, so a poster can hold
 the uniform rhythm everywhere and make one exception.
+
+### Alignment, and why it is not in `theme-overrides`
+
+```yaml
+poster:
+  heading-align: center
+  stats-align: center
+```
+
+`heading-align` centres the level-1 section bars; `stats-align` centres the
+cells of an evidence strip. Both default to `left`. A value other than `left`,
+`center` or `right` stops the render with a named error rather than quietly
+falling back — the wrong alignment on a poster tends to be noticed at the
+printer.
+
+These are poster options rather than `theme-overrides` entries because that
+route cannot carry them. `theme-overrides` merges a dict *into* a dict, so a
+bare alignment has no way through it, and `heading-text-args` is spread into
+`text()`, which has no alignment parameter at all. They sit with `block-gap`
+and `logo-height` instead, which are the same kind of thing: layout, not
+colour.
+
+### Title bar
+
+Three gaps run down the middle of the title bar — below the title, above the
+byline, above the affiliations. Name the ones you want to change:
+
+```yaml
+poster:
+  title-gaps:
+    subtitle: "0.07in"
+    author: "0.18in"
+    affiliation: "0.08in"
+```
+
+Defaults are `0.2in`, `0.35in` and `0.18in`. The dict merges over them, so
+naming one gap leaves the other two alone. They are named rather than scaled by
+a single factor because a poster that has to tighten them rarely tightens them
+evenly: a six-author byline needs different treatment from its affiliation
+line. Reach for this when the title bar's bottom inset starts eating the
+affiliations.
 
 ## Code at poster scale
 
