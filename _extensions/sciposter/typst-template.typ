@@ -51,6 +51,7 @@
   // Headings default to the body face. Split so a theme (or `_brand.yml`'s
   // `typography.headings.family`) can give display type its own face.
   heading-fonts: none,
+  code-fonts: none,
   palette: (),
 ) = {
   let body-font = (font: fonts)
@@ -129,6 +130,30 @@
       + (fill: fg.lighten(25%), weight: "medium", tracking: 0.08em),
     stat-value-text-args: head-font + (fill: primary, weight: "bold"),
     stat-label-text-args: body-font + (fill: fg, weight: "medium"),
+
+    // Deliberately EMPTY by default, and the emptiness is the feature: a
+    // poster that names none of the code options must render exactly as it
+    // did before these existed. Code inherits the body's fill and Typst's own
+    // mono face, and it inherits the body SIZE, which is the size the prose
+    // beside it is read at. `poster.code-font-size` sets one when the poster
+    // wants code quieter than its paragraphs — 0.75 to 0.85 of body is the
+    // usual choice on a large poster.
+    //
+    // Setting a fill here instead was tried and reverted: it repainted plain
+    // (unhighlighted) code in the theme's ink on every existing poster.
+    code-text-args: if code-fonts == none { (:) } else { (font: code-fonts) },
+
+    // A grouping surface, and the same primitive with a border and a mat. The
+    // frame exists for images: a dark cover or photograph dropped straight
+    // onto a pale poster prints as a muddy block, and a thin rule plus an
+    // inset of the warm surface is what separates it from the page.
+    surface-box-args: (fill: box-bg, radius: 6pt, inset: 0.3in),
+    frame-box-args: (
+      fill: box-bg,
+      radius: 6pt,
+      inset: 0.2in,
+      stroke: (paint: fg.lighten(70%), thickness: 1.5pt),
+    ),
 
     // Booktabs rules, not a grid. Typst's default table boxes every cell,
     // which at poster stroke-to-type ratios reads as a cage and competes with
@@ -332,6 +357,72 @@
   )
 }
 
+// A tinted container for grouping related content, and — as `kind: "frame"` —
+// the same block with a border and a mat around an image.
+//
+// Every argument defaults to `none` meaning "not given", not "no fill": the
+// theme's value survives unless the author names a replacement, so
+// `::: {.poster-surface}` with no attributes is the themed surface.
+#let poster-surface(
+  kind: "surface",
+  tint: none,
+  ink: none,
+  pad: none,
+  radius: none,
+  border: none,
+  body,
+) = context {
+  let th = _theme.get()
+  let args = th.at(kind + "-box-args")
+  if tint != none { args.insert("fill", tint) }
+  if pad != none { args.insert("inset", pad) }
+  if radius != none { args.insert("radius", radius) }
+  if border != none {
+    // A bare colour means "a rule in this colour at the theme's weight";
+    // anything else is passed to Typst as given.
+    args.insert("stroke", if type(border) == color {
+      (paint: border, thickness: 1.5pt)
+    } else { border })
+  }
+  // `ink` exists because a dark `tint` is otherwise a trap: markdown has no
+  // other way to reach the text colour inside a block, so a navy surface
+  // would print body-coloured text on itself with no way out but a fork.
+  block(
+    width: 100%,
+    breakable: false,
+    ..args,
+    if ink != none { text(fill: ink, body) } else { body },
+  )
+}
+
+// Explicit grid cells, as against the column flow the body normally uses.
+//
+// This is the one thing columns() cannot express. A poster column is a single
+// stream: two columns line up only when their content happens to fill to the
+// same height, and nothing an author writes makes that reliable. Cells in a
+// grid row share a row because they are a row. Wrap the div in `.full-width`
+// to align across the whole poster rather than inside one column.
+//
+// `widths` wins over `cols` when both are given — it is the more specific
+// statement, and the asymmetric case (a narrow label column beside a wide
+// diagram) is why it exists.
+#let poster-grid(
+  cols: 2,
+  widths: none,
+  gutter: 0.5in,
+  row-gutter: none,
+  align: top,
+  ..cells,
+) = {
+  grid(
+    columns: if widths != none { widths } else { (1fr,) * cols },
+    column-gutter: gutter,
+    row-gutter: if row-gutter == none { gutter } else { row-gutter },
+    align: align,
+    ..cells.pos(),
+  )
+}
+
 // The 3-metre hook: the one element a passer-by should read from across the
 // aisle. Sized as a multiple of base rather than a fixed point size so it
 // tracks the poster's scale; `scale: 3.0` on an a0 lands near the 75pt that
@@ -476,6 +567,11 @@
   margin: 1in,
   theme: "generic",
   theme-colors: (:),
+  theme-overrides: (:),
+  block-gap: auto,
+  code-fonts: none,
+  code-font-size: auto,
+  code-ligatures: "",
   theme-fonts: none,
   theme-heading-fonts: none,
   brand-enabled: true,
@@ -516,6 +612,7 @@
   if theme-heading-fonts != none {
     overrides.insert("heading-fonts", theme-heading-fonts)
   }
+  if code-fonts != none { overrides.insert("code-fonts", code-fonts) }
   let brand = if brand-enabled {
     brand-spec(
       colors: brand-colors,
@@ -525,6 +622,31 @@
   } else { (:) }
   let spec = theme-specs.at(theme, default: theme-specs.generic)
   let th = make-theme(..spec + brand + overrides)
+
+  // One vertical rhythm for every deliberate unit of information. The theme
+  // ships an asymmetric default on headings — more air above a section bar
+  // than below it — so this deliberately flattens that: a single gap is the
+  // point of asking for one. `poster.theme-overrides` still wins, which is
+  // how a poster keeps the uniform rhythm everywhere but one element.
+  if block-gap != auto {
+    for key in (
+      "heading-box-args", "subheading-box-args", "takeaway-box-args",
+      "stats-box-args", "box-args", "surface-box-args", "frame-box-args",
+    ) {
+      th.insert(key, th.at(key) + (above: block-gap, below: block-gap))
+    }
+  }
+
+  // Element-level overrides, merged INTO the element rather than replacing
+  // it: `heading-text-args: (size: 40pt)` must not drop the font and fill the
+  // theme already set. This is what makes a scarlet title bar with quiet
+  // section headings expressible without forking the template — title-*-args
+  // and heading-*-args were always separate elements, they were just never
+  // reachable from a .qmd.
+  for (key, value) in theme-overrides {
+    th.insert(key, th.at(key, default: (:)) + value)
+  }
+
   let (page-w, page-h) = resolve-size(size, orientation)
 
   // An explicit YAML size always wins; `auto` derives from the page.
@@ -754,6 +876,19 @@
     text(..(size: 1.25 * base-font-size) + th.subheading-text-args, it.body),
   )
   show link: set text(..th.link-text-args)
+  // Code. Quarto emits its own `show raw.where(block: true)` in the preamble,
+  // ahead of this template's `#show: sciposter.with(...)`, so this rule is the
+  // inner one and wins on the properties it names — and only those, which is
+  // why the grey code panel Quarto draws survives untouched.
+  //
+  // Size is `auto` unless asked for, meaning code rides the body size. That
+  // is the pre-existing behaviour, so a poster written before this option
+  // existed renders identically.
+  show raw: set text(
+    ..th.code-text-args
+      + (if code-font-size != auto { (size: code-font-size) } else { (:) })
+      + (if code-ligatures != "" { (ligatures: code-ligatures == "true") } else { (:) }),
+  )
   // Tables inherit the body size rather than carrying one of their own: a
   // poster table is read at the same distance as the prose beside it. The Lua
   // filter drops CSS `font-size` off HTML tables for the same reason.

@@ -67,6 +67,11 @@ logos:
 | `colors` | theme default | Map of theme color overrides (see Colors and branding) |
 | `fonts` | theme default | Font stack for body text, as a list |
 | `heading-fonts` | body fonts | Font stack for title, headings, and takeaway |
+| `code-fonts` | Typst default | Font stack for code, as a list |
+| `code-font-size` | body size | Size for code; `0.75`–`0.85 ×` body is usual on a large poster |
+| `code-ligatures` | font default | `false` turns off a coding font's ligatures |
+| `theme-overrides` | — | Per-element style overrides (see Overriding theme elements) |
+| `block-gap` | theme default | One vertical gap above and below every styled block |
 | `brand` | `true` | Set `false` to ignore the project's `_brand.yml` |
 | `logo-height` | `1.5in` | Height of every title-bar logo |
 | `footer` | — | String (centered) or `{left, center, right}` map |
@@ -91,6 +96,9 @@ as many as fit.
 | `::: {.poster-box title="..."}` | Framed box; add `.highlight` or `.alert` for variants |
 | `::: {.takeaway label="..."}` | Headline finding, sized to read from across the aisle; optional `scale="2.2"`, add `.quiet` for the warm-surface variant |
 | `::: {.stats label="..."}` | Evidence strip: one paragraph per cell, `**value** label` |
+| `::: {.poster-grid}` | Aligned cells instead of column flow; `cols` / `widths` / `gutter` / `row-gutter` |
+| `::: {.poster-surface}` | Tinted grouping block; `tint` / `ink` / `pad` / `radius` / `border` |
+| `::: {.poster-image-frame}` | The same block with a rule and a mat, for images |
 | `::: {.qr url="..."}` | Scannable QR code; optional `size="2in"` and `label="..."` |
 
 A `.full-width` float is not cheap. It costs its own height **plus** 0.4 in of
@@ -239,6 +247,170 @@ brand properties:
 - **`typography.headings.color`** — poster headings are reversed white on a
   filled primary bar, whereas a brand heading color assumes dark-on-light. It
   would render close to invisible.
+
+### Overriding theme elements
+
+`poster.colors` reaches the seven colors every element derives from. When a
+poster needs one *element* to differ — a scarlet title bar above navy section
+bars, or 38 pt headings when the built-in `1.6 ×` relationship gives 45 —
+`poster.theme-overrides` names the element directly.
+
+```yaml
+poster:
+  theme: unl
+  title-font-size: 80pt
+  base-font-size: 28pt
+  theme-overrides:
+    heading-box-args:
+      fill: "#0D3B66"          # navy section bars
+    heading-text-args:
+      size: "38pt"             # not 1.6 x 28
+    subheading-text-args:
+      size: "32pt"
+      fill: "#0D3B66"
+```
+
+Each entry **merges into** the element rather than replacing it, so naming a
+size does not drop the font and fill the theme already set. Computed sizes are
+merged *under* the theme dict, which is why an explicit `size:` wins over the
+built-in ratio.
+
+Element names follow the theme's own structure — `<element>-box-args` for the
+container, `<element>-text-args` for the type inside it:
+
+| Element | Reaches |
+|---|---|
+| `title-box-args` / `title-text-args` | The title bar, independent of headings |
+| `heading-box-args` / `heading-text-args` | Level-1 section bars |
+| `subheading-box-args` / `subheading-text-args` | Level-2 headings |
+| `box-args`, `highlight-box-args`, `alert-box-args` | Poster boxes and variants |
+| `takeaway-box-args`, `takeaway-quiet-box-args` | Both takeaway kinds |
+| `stats-box-args`, `stat-value-text-args`, `stat-label-text-args` | The evidence strip |
+| `surface-box-args`, `frame-box-args` | Surfaces and image frames |
+| `code-text-args` | Code, when the three shorthands are not enough |
+| `body-text-args`, `caption-text-args`, `link-text-args` | Prose, captions, links |
+| `footer-box-args`, `footer-text-args`, `stripe-args` | Footer bar and title stripe |
+
+Values are read by shape, not declared:
+
+| You write | Typst gets |
+|---|---|
+| `"#0D3B66"` or `"0D3B66"` | a color |
+| `"40pt"`, `"0.35in"`, `"1.2em"` | a length |
+| `"50%"`, `"1fr"` | a ratio or fraction |
+| `"none"`, `"auto"`, `true`, `42` | the literal |
+| anything else | a string — `"bold"`, `"Fira Code"` |
+| a YAML list | an array |
+| a YAML map | a dictionary — which is how strokes and insets are written |
+
+```yaml
+    heading-box-args:
+      inset: { x: "0.4in", y: "0.25in" }
+      radius: "6pt"
+    subheading-box-args:
+      stroke: { bottom: "3pt" }
+```
+
+### One vertical rhythm
+
+`poster.block-gap` sets a single gap above and below every styled block —
+heading bars, subheadings, boxes, takeaways, stat strips, surfaces:
+
+```yaml
+poster:
+  block-gap: "0.45in"
+```
+
+The theme ships an asymmetric default on headings, more air above a section
+bar than below it. `block-gap` deliberately flattens that; a single gap is the
+point of asking for one. `theme-overrides` still wins, so a poster can hold
+the uniform rhythm everywhere and make one exception.
+
+## Code at poster scale
+
+Code inherits the body size by default, which is the size the prose beside it
+is read at. On a large poster that is usually louder than it should be:
+
+```yaml
+poster:
+  code-fonts: ["Fira Code", "DejaVu Sans Mono"]
+  code-font-size: "22pt"     # against a 28pt body
+  code-ligatures: false
+```
+
+All three are unset by default and setting none of them changes nothing —
+code keeps Typst's own mono face at body size. `code-ligatures` is a
+three-state: absent leaves the font's own setting alone, `false` turns
+ligatures off, `true` forces them on. It only matters for a coding font that
+has them, which is the reason to name Fira Code in the first place.
+
+The grey panel Quarto draws behind a code block is Quarto's, not this
+extension's, and these options leave it alone. Reach for
+`theme-overrides.code-text-args` if the shorthands are not enough.
+
+## Surfaces and frames
+
+`.poster-surface` groups related content on a tint without coloring a whole
+column. With no attributes it takes the theme's surface:
+
+```markdown
+::: {.poster-surface}
+Grouped on the theme's warm surface.
+:::
+
+::: {.poster-surface tint="#0D3B66" ink="#FFFFFF" pad="0.35in" radius="6pt"}
+A dark surface needs its own text color; `ink` is the only way markdown can
+reach it.
+:::
+```
+
+`.poster-image-frame` is the same block with a rule and a mat. It exists for
+images: a dark cover or photograph dropped straight onto a pale poster prints
+as a muddy block, and a thin rule plus an inset of the warm surface is what
+separates it from the page.
+
+```markdown
+::: {.poster-image-frame pad="0.3in" border="#D8DEE4"}
+![](book-cover.jpg){width=70%}
+:::
+```
+
+Attributes: `tint` (fill), `ink` (text color), `pad` (inset), `radius`,
+`border`. A bare color for `border` means a rule in that color at the theme's
+weight; a length sets the weight.
+
+**One limitation.** Inline code on a dark `tint` stays dark. Quarto's syntax
+highlighter emits every token with an explicit fill, and an explicit fill on
+the inner element beats `ink`. Use bold rather than backticks there.
+
+## Aligning across columns
+
+A poster column is a single stream. Two columns line up only when their
+content happens to fill to the same height, and nothing an author writes makes
+that reliable — Typst offers no cross-column anchor, so this is not something
+a setting can fix.
+
+`.poster-grid` gets alignment by leaving the flow model. Each top-level block
+inside it becomes a grid cell, and a row is a row:
+
+```markdown
+::: {.poster-grid widths="1fr,1.4fr" gutter="0.4in"}
+::: {.poster-surface}
+Left cell. Its top edge shares a row with the cell beside it, whatever
+either one contains.
+:::
+
+::: {.poster-surface}
+Right cell, wider by `widths`.
+:::
+:::
+```
+
+`cols=3` gives equal fractions; `widths` overrides it with explicit tracks and
+is the one to reach for when a narrow label column sits beside a wide diagram.
+`gutter` sets both axes unless `row-gutter` names the other. Wrap the whole div
+in `.full-width` to align across the poster rather than inside one column —
+and read the float-cost note above before you do.
 
 ## Figure colors
 
@@ -487,6 +659,7 @@ Two things can go wrong, and the banner names which:
 - [`examples/python.qmd`](examples/python.qmd) — matplotlib, seaborn and plotnine under the Jupyter engine
 - [`examples/qr-codes.qmd`](examples/qr-codes.qmd) — QR codes at several sizes, with labels
 - [`examples/tables.qmd`](examples/tables.qmd) — table styling and the HTML/CSS font-size trap
+- [`examples/template-controls.qmd`](examples/template-controls.qmd) — theme overrides, code sizing, surfaces, grid alignment
 
 ## Changelog
 

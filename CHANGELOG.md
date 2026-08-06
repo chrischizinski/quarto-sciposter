@@ -12,6 +12,69 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.4.0] — 2026-08-06
+
+Poster-level hierarchy, code, and layout controls. Everything below was
+previously reachable only by forking the template.
+
+### Added
+
+- `poster.theme-overrides` names any theme element directly:
+  `heading-box-args`, `title-text-args`, `stat-value-text-args` and the rest.
+  Entries merge into the element rather than replacing it, so naming a size
+  does not drop the font and fill the theme already set, and computed sizes
+  stay merged *under* the theme dict so an explicit `size:` wins over the
+  built-in `1.6 ×` heading relationship.
+
+  This is what makes a scarlet title bar above navy section bars expressible
+  from a `.qmd`. `title-*-args` and `heading-*-args` were always separate
+  elements — they were just never reachable.
+
+  Values are read by shape: `"#0D3B66"` is a colour, `"40pt"` a length,
+  `"50%"` a ratio, a YAML map a dictionary (which is how strokes and insets
+  are written), anything else a string. The conversion happens in the Lua
+  filter and reaches Typst as a `RawInline`, because an interpolated
+  `MetaString` is escaped by the Typst writer and arrives as a string rather
+  than as code.
+
+- `poster.code-fonts`, `poster.code-font-size` and `poster.code-ligatures`.
+  All three are unset by default and setting none of them changes nothing:
+  code keeps Typst's own mono face at body size, which is what every poster
+  written before this did. `code-ligatures` is a three-state — absent leaves
+  the font's own setting alone, `false` turns them off, `true` forces them on.
+
+- `poster.block-gap` sets one vertical gap above and below every styled block.
+  The theme ships an asymmetric default on headings; this deliberately
+  flattens it, and `theme-overrides` still wins for a single exception.
+
+- `::: {.poster-surface}` groups content on a tint without colouring a whole
+  column, and `::: {.poster-image-frame}` is the same block with a rule and a
+  mat — which is what keeps a dark cover from printing as a muddy block
+  against a pale poster. Attributes: `tint`, `ink`, `pad`, `radius`, `border`.
+
+  `ink` exists because a dark `tint` is otherwise a trap: markdown has no
+  other way to reach the text colour inside a block.
+
+- `::: {.poster-grid}` lays its children out as real grid cells instead of
+  flowing them, so a row is a row. `cols` for equal fractions, `widths` for
+  explicit tracks, `gutter` / `row-gutter` for spacing.
+
+  This is the honest answer to aligning content across columns. `columns()` is
+  a single stream with no cross-column anchor, so alignment in *flowing*
+  content is not something a setting can deliver; the grid gets it by leaving
+  the flow model.
+
+  Cell splitting runs in its own top-down filter pass. Pandoc visits divs
+  bottom-up, so a `.poster-surface` used as a cell would already be three
+  blocks — an opening raw block, its content, a closing one — and each would
+  be split off as a cell of its own.
+
+### Known limitation
+
+Inline code on a dark `tint` stays dark. Quarto's syntax highlighter emits
+every token with an explicit fill, and an explicit fill on the inner element
+beats `ink`. Use bold rather than backticks there.
+
 ## [0.3.0] — 2026-08-06
 
 Four changes that came out of a design review of a real 48x36 poster. Each is

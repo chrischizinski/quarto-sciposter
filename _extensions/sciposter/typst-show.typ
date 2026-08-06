@@ -34,6 +34,26 @@ $endif$
 $if(poster.heading-fonts)$
   theme-heading-fonts: ($for(poster.heading-fonts)$"$it$", $endfor$),
 $endif$
+$if(poster.code-fonts)$
+  code-fonts: ($for(poster.code-fonts)$"$it$", $endfor$),
+$endif$
+$-- These three arrive as finished Typst source, built by the Lua filter.
+$-- Interpolating them as "$var$" would hand Typst an escaped string instead
+$-- of a length, a colour or a dictionary; see typst_value in sciposter.lua.
+$if(poster.code-font-size-typst)$
+  code-font-size: $poster.code-font-size-typst$,
+$endif$
+$if(poster.block-gap-typst)$
+  block-gap: $poster.block-gap-typst$,
+$endif$
+$if(poster.theme-overrides-typst)$
+  theme-overrides: $poster.theme-overrides-typst$,
+$endif$
+$-- Tri-state, so it is forwarded unconditionally: `$if()$` cannot tell an
+$-- absent key from an explicit `false`, and here they mean different things —
+$-- absent leaves the font's own ligature setting alone, false turns it off.
+$-- Interpolation can tell them apart: "" against "true" / "false".
+  code-ligatures: "$poster.code-ligatures$",
 $-- Quarto always defines these in Typst scope — `(:)` when the project has no
 $-- `_brand.yml` — so they can be forwarded unconditionally.
   brand-colors: brand-color,
