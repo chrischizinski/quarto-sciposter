@@ -9,6 +9,10 @@
 --     variant: .quiet; optional label="..." and scale="..." attributes
 --   ::: {.stats}        -> #stats-grid(...)          (evidence number strip)
 --     one paragraph per cell, `**value** label`; optional label="..."
+--   ::: {.poster-grid}  -> #poster-grid(...)         (aligned cells, not flow)
+--     one cell per block; cols / widths / gutter / row-gutter
+--   ::: {.poster-surface} -> #poster-surface(...)[ ] (tinted grouping block)
+--     variant: .poster-image-frame; tint / ink / pad / radius / border
 --   ::: {.qr url="..."} -> #poster-qr(...)           (scannable QR code)
 --     optional size="..." and label="..." attributes
 --   ::: {#refs}         -> #refs-section(...)[ ... ] per poster.refs
@@ -26,6 +30,139 @@ local function wrap(div, open)
   blocks:extend(div.content)
   blocks:insert(pandoc.RawBlock("typst", "]"))
   return blocks
+end
+
+-- Cells: one positional argument per top-level block, so the Typst side can
+-- lay them out on a grid. Used by .stats and .poster-grid, which differ only
+-- in the function they hand the cells to.
+--
+-- This runs in its own TOP-DOWN pass, and that is load-bearing. Pandoc visits
+-- divs bottom-up by default, so a `.poster-surface` used as a grid cell would
+-- already have become three blocks — an opening raw block, its content, a
+-- closing one — and each would be split off as a cell of its own, producing
+-- `[#poster-surface(...)[` as one argument and `]` as another. Splitting from
+-- the outside first means a child div is still a single block when its cell
+-- boundary is drawn, and the pass that converts it runs afterwards.
+local function wrap_cells(div, open)
+  local blocks = pandoc.Blocks({ pandoc.RawBlock("typst", open) })
+  for _, block in ipairs(div.content) do
+    blocks:insert(pandoc.RawBlock("typst", "["))
+    blocks:insert(block)
+    blocks:insert(pandoc.RawBlock("typst", "],"))
+  end
+  blocks:insert(pandoc.RawBlock("typst", ")"))
+  return blocks
+end
+
+-- ---------------------------------------------------------------------------
+-- YAML -> Typst values
+-- ---------------------------------------------------------------------------
+--
+-- `poster.theme-overrides` and the sizing attributes on .poster-surface /
+-- .poster-grid carry Typst values, not strings: lengths, colours, arrays,
+-- nested dictionaries. Those cannot travel as `"$var$"` in the Pandoc
+-- template — the Typst writer escapes an interpolated MetaString, so
+-- `(a: 40pt, fill: rgb("#0D3B66"))` arrives as
+-- `"\(a: 40pt, fill: rgb(\"\#0D3B66\"))"` and is a string, not code.
+--
+-- A `RawInline` of format "typst" is passed through verbatim instead, so the
+-- conversion happens here and the template interpolates finished source. That
+-- also means the value language is decided in one place:
+--
+--   "#0D3B66" / "0D3B66"     -> rgb(13, 59, 102)      (6 or 8 hex digits)
+--   "40pt" "0.35in" "1.2em"  -> the length literal, unchanged
+--   "50%" "1fr"              -> ratio / fraction, unchanged
+--   "none" "auto"            -> the bare keyword
+--   42  3.5  true  false     -> the literal
+--   anything else            -> a quoted string ("bold", "Fira Code")
+--   a YAML list              -> an array
+--   a YAML map               -> a dictionary
+--
+-- Colours become `rgb(r, g, b)` rather than `rgb("#...")` deliberately: "#"
+-- is Typst's code marker, and keeping it out of the emitted source means the
+-- author can write hex with or without it and nothing downstream has to care.
+local function hex_to_rgb(hex)
+  local channels = {}
+  for pair in hex:gmatch("%x%x") do
+    channels[#channels + 1] = tostring(tonumber(pair, 16))
+  end
+  return "rgb(" .. table.concat(channels, ", ") .. ")"
+end
+
+-- Units Typst accepts on a bare number. `fr` and `%` are not lengths but read
+-- and emit identically, so they ride along.
+local length_units = {
+  pt = true, mm = true, cm = true, ["in"] = true,
+  em = true, fr = true,
+}
+
+local function typst_scalar(s)
+  if s == "none" or s == "auto" or s == "true" or s == "false" then
+    return s
+  end
+  if s:match("^%-?%d+%.?%d*$") then
+    return s
+  end
+  local hex = s:match("^#?(%x+)$")
+  if hex and (#hex == 6 or #hex == 8) then
+    return hex_to_rgb(hex)
+  end
+  local number, unit = s:match("^(%-?%d+%.?%d*)%s*(%a+)$")
+  if number and length_units[unit] then
+    return number .. unit
+  end
+  if s:match("^%-?%d+%.?%d*%%$") then
+    return s
+  end
+  return '"' .. s:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
+end
+
+local function typst_value(value)
+  local kind = pandoc.utils.type(value)
+  if kind == "boolean" then
+    return tostring(value)
+  end
+  if kind == "List" then
+    local items = {}
+    for _, item in ipairs(value) do
+      items[#items + 1] = typst_value(item)
+    end
+    -- A one-element Typst array needs the trailing comma or it is just a
+    -- parenthesised value — which is how a single-font list becomes a string.
+    local tail = #items == 1 and "," or ""
+    return "(" .. table.concat(items, ", ") .. tail .. ")"
+  end
+  if kind == "table" then
+    local keys = {}
+    for key in pairs(value) do
+      keys[#keys + 1] = key
+    end
+    -- Sorted so the emitted source is reproducible; Typst does not care.
+    table.sort(keys)
+    if #keys == 0 then
+      return "(:)"
+    end
+    local entries = {}
+    for _, key in ipairs(keys) do
+      entries[#entries + 1] = key .. ": " .. typst_value(value[key])
+    end
+    return "(" .. table.concat(entries, ", ") .. ")"
+  end
+  return typst_scalar(pandoc.utils.stringify(value))
+end
+
+-- Div attributes are always strings, and an absent one must stay absent
+-- rather than become `none` — the Typst side distinguishes "not given" from
+-- "given as none".
+local function attr_args(div, names)
+  local args = {}
+  for _, name in ipairs(names) do
+    local value = div.attributes[name]
+    if value then
+      args[#args + 1] = name .. ": " .. typst_scalar(value)
+    end
+  end
+  return args
 end
 
 -- How much of an HTML table's CSS to drop so it looks like the poster:
@@ -60,6 +197,27 @@ local function read_meta(meta)
     end
     poster["colors"] = colors
     meta["poster"] = poster
+  end
+  -- poster.theme-overrides is a map of theme element name -> dict of Typst
+  -- values. Converted here and handed to the template as raw Typst, for the
+  -- reasons in the comment above typst_value.
+  local overrides = poster["theme-overrides"]
+  if overrides ~= nil and pandoc.utils.type(overrides) == "table" then
+    poster["theme-overrides-typst"] = pandoc.MetaInlines({
+      pandoc.RawInline("typst", typst_value(overrides)),
+    })
+    meta["poster"] = poster
+  end
+  -- Same treatment for the two scalars that carry a length: they would
+  -- otherwise arrive as strings and Typst has no string-to-length parser.
+  for _, key in ipairs({ "block-gap", "code-font-size" }) do
+    local value = poster[key]
+    if value ~= nil then
+      poster[key .. "-typst"] = pandoc.MetaInlines({
+        pandoc.RawInline("typst", typst_scalar(pandoc.utils.stringify(value))),
+      })
+      meta["poster"] = poster
+    end
   end
   -- poster.footer accepts a plain string or a {left, center, right} map;
   -- pandoc templates can't distinguish the two, so flatten the map here.
@@ -177,6 +335,46 @@ local function strip_table_css(tbl)
   return tbl
 end
 
+local function split_cells(div)
+  -- ::: {.stats} — one paragraph per cell, each `**value** label`.
+  if div.classes:includes("stats") then
+    local args = {}
+    if div.attributes["label"] then
+      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+    end
+    local open = "#stats-grid(" .. table.concat(args, ", ")
+    if #args > 0 then
+      open = open .. ", "
+    end
+    return wrap_cells(div, open)
+  end
+
+  -- ::: {.poster-grid} — one cell per top-level block, laid out as real grid
+  -- rows. This is the answer to "align a box in one column with a step in the
+  -- next": column flow cannot do it, because columns() is a single stream with
+  -- no cross-column anchor, but cells in a row share a row by construction.
+  if div.classes:includes("poster-grid") then
+    local args = attr_args(div, { "cols", "gutter", "row-gutter" })
+    -- widths is the one attribute that is a list rather than a scalar:
+    -- widths="2fr,1fr" has to reach Typst as an array, not as a string.
+    local widths = div.attributes["widths"]
+    if widths then
+      local tracks = {}
+      for track in widths:gmatch("[^,%s]+") do
+        tracks[#tracks + 1] = typst_scalar(track)
+      end
+      local tail = #tracks == 1 and "," or ""
+      table.insert(args, "widths: (" .. table.concat(tracks, ", ") .. tail .. ")")
+    end
+    local open = "#poster-grid(" .. table.concat(args, ", ")
+    if #args > 0 then
+      open = open .. ", "
+    end
+    return wrap_cells(div, open)
+  end
+
+end
+
 local function map_div(div)
   if div.classes:includes("col-break") then
     return pandoc.RawBlock("typst", "#colbreak()")
@@ -195,26 +393,16 @@ local function map_div(div)
     return wrap(div, "#full-width[")
   end
 
-  -- ::: {.stats} — one paragraph per cell, each `**value** label`. Every
-  -- top-level block is handed over as a positional argument so the Typst side
-  -- can lay them out on a shared grid.
-  if div.classes:includes("stats") then
-    local args = {}
-    if div.attributes["label"] then
-      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
-    end
-    local open = "#stats-grid(" .. table.concat(args, ", ")
-    if #args > 0 then
-      open = open .. ", "
-    end
-    local blocks = pandoc.Blocks({ pandoc.RawBlock("typst", open) })
-    for _, block in ipairs(div.content) do
-      blocks:insert(pandoc.RawBlock("typst", "["))
-      blocks:insert(block)
-      blocks:insert(pandoc.RawBlock("typst", "],"))
-    end
-    blocks:insert(pandoc.RawBlock("typst", ")"))
-    return blocks
+  -- ::: {.poster-surface} — a tinted container for grouping, and
+  -- ::: {.poster-image-frame} — the same primitive with a border and a mat,
+  -- which is what keeps a dark book cover from printing as a muddy block
+  -- against a pale poster.
+  if div.classes:includes("poster-surface")
+      or div.classes:includes("poster-image-frame") then
+    local kind = div.classes:includes("poster-image-frame") and "frame" or "surface"
+    local args = attr_args(div, { "tint", "ink", "pad", "radius", "border" })
+    table.insert(args, 1, 'kind: "' .. kind .. '"')
+    return wrap(div, "#poster-surface(" .. table.concat(args, ", ") .. ")[")
   end
 
   -- ::: {.qr url="https://..."} — url is required; without it the div is
@@ -283,6 +471,9 @@ end
 -- walked.
 return {
   { Meta = read_meta },
+  -- Top-down, so a div used as a grid cell is still one block when its cell
+  -- boundary is drawn. See the comment on wrap_cells.
+  { traverse = "topdown", Div = split_cells },
   { Div = map_div, Table = strip_table_css },
   { Pandoc = warn_dropped_styling },
 }

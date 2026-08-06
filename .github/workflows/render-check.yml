@@ -30,6 +30,7 @@ jobs:
           quarto render examples/a0-portrait.qmd --to sciposter-typst
           quarto render examples/qr-codes.qmd --to sciposter-typst
           quarto render examples/tables.qmd --to sciposter-typst --metadata keep-typ=true
+          quarto render examples/template-controls.qmd --to sciposter-typst
 
       # No table should carry a size of its own: on an A1 poster an absolute
       # 9-12pt is a third of the ~27pt body, unreadable at distance, and
@@ -91,6 +92,17 @@ jobs:
             exit 1
           fi
 
+      # Every poster-level control at once. The overflow guard is the check
+      # that matters here: theme-overrides can change the heading size, and
+      # block-gap the rhythm, either of which can push a fitting poster over.
+      - name: Check the controls example stays quiet
+        run: |
+          if pdftotext examples/template-controls.pdf - | grep -q 'CONTENT OVERFLOW'; then
+            echo "template-controls.pdf overflowed"
+            exit 1
+          fi
+          echo "template-controls.pdf fits"
+
       # The negative control for the step above: template.qmd carries a
       # bottom-pinned float of its own and fits, so it must stay quiet. Without
       # this a guard that warned on every float would look green.
@@ -106,7 +118,7 @@ jobs:
         run: |
           pdfinfo template.pdf | grep -q "3456 x 2592" || { echo "template.pdf wrong size"; exit 1; }
           pdfinfo examples/a0-portrait.pdf | grep -q "A0" || { echo "a0-portrait.pdf wrong size"; exit 1; }
-          for f in template.pdf examples/a0-portrait.pdf examples/qr-codes.pdf examples/tables.pdf; do
+          for f in template.pdf examples/a0-portrait.pdf examples/qr-codes.pdf examples/tables.pdf examples/template-controls.pdf; do
             pages=$(pdfinfo "$f" | awk '/^Pages:/ {print $2}')
             [ "$pages" = "1" ] || { echo "$f overflowed to $pages pages"; exit 1; }
           done
