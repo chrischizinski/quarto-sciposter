@@ -233,6 +233,18 @@
 // Set by sciposter() so helper functions (poster-box) can read theme args.
 #let _theme = state("sciposter-theme", make-theme())
 
+// Horizontal alignment arrives from YAML as a string, and Typst has no
+// string-to-alignment parser. A typo panics rather than quietly falling back
+// to `left`: the wrong alignment on a poster is the kind of thing that is only
+// noticed at the printer.
+#let _h-align(name) = if name == "left" { left } else if name == "center" {
+  center
+} else if name == "right" {
+  right
+} else {
+  panic("alignment must be \"left\", \"center\" or \"right\"; got \"" + name + "\"")
+}
+
 // ---------------------------------------------------------------------------
 // Size resolution
 // ---------------------------------------------------------------------------
@@ -485,7 +497,10 @@
         // apart by the value tier, and the extra width buys each label a
         // second word before it wraps.
         column-gutter: 0.35in,
-        align: top,
+        // Left by default. Centred cells read better when the values are the
+        // point and the labels are short, which is the usual evidence strip;
+        // left reads better when the labels run to a second line.
+        align: top + th.at("stats-align", default: left),
         ..items.map(cell => {
           // A linebreak after the value keeps it on its own line without
           // asking the author to write one; the label then wraps beneath it.
@@ -581,6 +596,15 @@
   theme: "generic",
   theme-colors: (:),
   theme-overrides: (:),
+  // Three layout knobs that `theme-overrides` cannot carry. That route merges
+  // a dict INTO a dict (`th.at(key) + value`), so an alignment or a bare
+  // length has no way through it — and `heading-*-args` are spread into
+  // `text()`, which has no alignment parameter at all. They sit here with
+  // `block-gap` and `logo-height` instead, which are the same kind of thing:
+  // poster-level layout, not theme colour.
+  heading-align: "left",
+  stats-align: "left",
+  title-gaps: (:),
   block-gap: auto,
   code-fonts: none,
   code-font-size: auto,
@@ -875,13 +899,26 @@
   // disruptive at 1m than a soft right edge.
   set par(justify: false, leading: 0.65em)
   set heading(numbering: none)
+  // Carried on the theme state because stats-grid() is a free helper with no
+  // access to these arguments. Inserted after the theme-overrides merge above
+  // so it cannot collide with a key an author named there.
+  th.insert("stats-align", _h-align(stats-align))
   _theme.update(th)
 
   // Section headings: filled bars in theme colors.
+  //
+  // The `left` case returns the text bare rather than wrapping it in
+  // `align(left, ..)`, so a poster that never asks for this renders
+  // byte-identically. `heading-text-args` cannot do this job: it is spread
+  // into `text()`, which has no alignment parameter.
+  let heading-h = _h-align(heading-align)
   show heading.where(level: 1): it => block(
     width: 100%,
     ..th.heading-box-args,
-    text(..(size: 1.6 * base-font-size) + th.heading-text-args, it.body),
+    {
+      let inner = text(..(size: 1.6 * base-font-size) + th.heading-text-args, it.body)
+      if heading-h == left { inner } else { align(heading-h, inner) }
+    },
   )
   show heading.where(level: 2): it => block(
     width: 100%,
@@ -952,6 +989,13 @@
     stack(dir: ltr, spacing: 0.4in, ..logos.map(p => image(p, height: logo-height)))
   } else { none }
 
+  // The three gaps down the middle of the title bar. Named rather than scaled
+  // by one factor because a poster that has to tighten them rarely tightens
+  // them evenly — the gap before a six-author byline is doing different work
+  // from the gap before its affiliations. Merging the author's dict over the
+  // defaults means naming one gap leaves the other two alone.
+  let gaps = (subtitle: 0.2in, author: 0.35in, affiliation: 0.18in) + title-gaps
+
   let titlebar = block(
     width: 100%,
     inset: (x: margin, y: 0.6 * margin),
@@ -967,15 +1011,15 @@
         set par(justify: false)
         text(size: title-font-size, weight: "bold", title)
         if subtitle != none {
-          v(0.2in)
+          v(gaps.subtitle)
           text(size: 0.58 * title-font-size, subtitle)
         }
         if author-line != none {
-          v(0.35in)
+          v(gaps.author)
           text(size: 1.25 * base-font-size, weight: "medium", author-line)
         }
         if affiliation-line != none {
-          v(0.18in)
+          v(gaps.affiliation)
           text(size: 0.95 * base-font-size, affiliation-line)
         }
       },

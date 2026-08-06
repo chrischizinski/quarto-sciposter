@@ -201,12 +201,16 @@ local function read_meta(meta)
   -- poster.theme-overrides is a map of theme element name -> dict of Typst
   -- values. Converted here and handed to the template as raw Typst, for the
   -- reasons in the comment above typst_value.
-  local overrides = poster["theme-overrides"]
-  if overrides ~= nil and pandoc.utils.type(overrides) == "table" then
-    poster["theme-overrides-typst"] = pandoc.MetaInlines({
-      pandoc.RawInline("typst", typst_value(overrides)),
-    })
-    meta["poster"] = poster
+  -- poster.title-gaps is the same shape: a map of names to lengths, so it
+  -- takes the same route for the same reason.
+  for _, key in ipairs({ "theme-overrides", "title-gaps" }) do
+    local map = poster[key]
+    if map ~= nil and pandoc.utils.type(map) == "table" then
+      poster[key .. "-typst"] = pandoc.MetaInlines({
+        pandoc.RawInline("typst", typst_value(map)),
+      })
+      meta["poster"] = poster
+    end
   end
   -- Same treatment for the two scalars that carry a length: they would
   -- otherwise arrive as strings and Typst has no string-to-length parser.
