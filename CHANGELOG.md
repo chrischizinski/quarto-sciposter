@@ -12,6 +12,46 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.5.0] — 2026-08-06
+
+One control, and two holes in CI that adding it exposed.
+
+### Added
+
+- `::: {.qr offset="0.25in"}` nudges a QR code down inside its layout cell; a
+  negative value moves it up.
+
+  It is there for one job: pairing a code with a logo whose artwork carries
+  transparent canvas, where `layout-valign="center"` centres the two *blocks*
+  and therefore does not centre the two visible squares. This cannot be
+  automated — Typst cannot inspect an image's alpha channel, so nothing can
+  find where the visible ink starts. The number is set by eye against a render,
+  and the option exists so that doing so does not mean dropping raw Typst into
+  the document.
+
+  Implemented as `pad(top:)`, not `move(dy:)`. Padding reserves the height, so
+  a nudge that pushes a code past the bottom of the fixed-height body row trips
+  the overflow guard. `move` would slide the code out of the row without a
+  word, which is the exact failure this template spent 0.3.0 fixing.
+
+### Fixed
+
+- The CI overflow checks could pass on a poster that had overflowed. They
+  grepped for the phrase `CONTENT OVERFLOW`, but the banner is drawn across the
+  body, so `pdftotext` interleaves it with the text it crosses and returns the
+  phrase split over two lines — `…the only thing onCONTENT` / `OVERFLOW`. A PDF
+  visibly showing the banner matched zero times. The checks now match the bare
+  token `OVERFLOW`, which interleaving cannot split.
+- `examples/qr-codes.pdf` is now checked for overflow. It had only a page-count
+  check, which cannot catch this: the body is a fixed-height row, so a poster
+  that spills draws over its own footer and still reports one page.
+
+### Unchanged
+
+A poster that sets no `offset` renders byte-identically to 0.4.0 —
+verified by pixel diff for `template.qmd`, `a0-portrait`, `tables`,
+`template-controls`, and the previous `qr-codes` content.
+
 ## [0.4.0] — 2026-08-06
 
 Poster-level hierarchy, code, and layout controls. Everything below was
@@ -202,6 +242,9 @@ Under the Jupyter engine, per-chunk `fig-width` is ignored while the
 document-level option works, and `poster.palette` must be read out of the front
 matter — there is no `rmarkdown::metadata` equivalent. See `examples/python.qmd`.
 
-[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.5.0
+[0.4.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.4.0
+[0.3.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.3.0
 [0.2.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.2.0
 [0.1.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.1.0

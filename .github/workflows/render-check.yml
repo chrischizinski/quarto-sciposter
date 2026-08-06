@@ -95,20 +95,39 @@ jobs:
       # Every poster-level control at once. The overflow guard is the check
       # that matters here: theme-overrides can change the heading size, and
       # block-gap the rhythm, either of which can push a fitting poster over.
+      #
+      # Grep for the bare word, NOT the phrase 'CONTENT OVERFLOW'. The banner is
+      # drawn across the body, so pdftotext interleaves it with whatever text it
+      # crosses and the phrase comes back split — observed as
+      # `A QR code is the only thing onCONTENT` on one line and `OVERFLOW` on
+      # the next. The phrase grep returned zero matches on a PDF that plainly
+      # showed the banner; a single token cannot be broken that way.
       - name: Check the controls example stays quiet
         run: |
-          if pdftotext examples/template-controls.pdf - | grep -q 'CONTENT OVERFLOW'; then
+          if pdftotext examples/template-controls.pdf - | grep -q 'OVERFLOW'; then
             echo "template-controls.pdf overflowed"
             exit 1
           fi
           echo "template-controls.pdf fits"
 
-      # The negative control for the step above: template.qmd carries a
+      # qr-codes.qmd is close to full and gains content whenever a QR feature is
+      # documented, so it needs the guard too. The page-count check below cannot
+      # stand in for it: the body is a fixed-height row, so a poster that spills
+      # draws over its own footer and still reports one page.
+      - name: Check the QR example stays quiet
+        run: |
+          if pdftotext examples/qr-codes.pdf - | grep -q 'OVERFLOW'; then
+            echo "qr-codes.pdf overflowed"
+            exit 1
+          fi
+          echo "qr-codes.pdf fits"
+
+      # The negative control for the steps above: template.qmd carries a
       # bottom-pinned float of its own and fits, so it must stay quiet. Without
       # this a guard that warned on every float would look green.
       - name: Check a healthy poster with a bottom float stays quiet
         run: |
-          if pdftotext template.pdf - | grep -q 'CONTENT OVERFLOW'; then
+          if pdftotext template.pdf - | grep -q 'OVERFLOW'; then
             echo "template.pdf warns about overflow but fits"
             exit 1
           fi

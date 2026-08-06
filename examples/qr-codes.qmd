@@ -44,7 +44,22 @@ Mount height matters as much as size. A code near the top of a mounted poster
 can end up above head height, where nobody can hold a phone steady against it.
 Keep codes in the lower two-thirds.
 
+# Aligning against a neighbour
+
+`offset` nudges a code down inside its cell; a negative value moves it up.
+
+::: {.poster-grid cols="2" gutter="0.3in"}
+::: {.qr url="https://example.org/left" size="1.5in" label="No offset"}
+:::
+
+::: {.qr url="https://example.org/right" size="1.5in" offset="0.25in" label="offset=\"0.25in\""}
+:::
+:::
+
+Use it to pair a code with a logo whose transparent canvas defeats
+`layout-valign`. Set it by eye — Typst cannot see where an image's ink starts.
+
 # Notes
 
-The QR package (`tiaoma`) is downloaded on first use and cached. Posters that
-place no codes never fetch it, so this costs nothing unless you use it.
+The QR package (`tiaoma`) is downloaded on first use and cached. A poster that
+places no codes never fetches it.

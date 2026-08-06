@@ -99,7 +99,7 @@ as many as fit.
 | `::: {.poster-grid}` | Aligned cells instead of column flow; `cols` / `widths` / `gutter` / `row-gutter` |
 | `::: {.poster-surface}` | Tinted grouping block; `tint` / `ink` / `pad` / `radius` / `border` |
 | `::: {.poster-image-frame}` | The same block with a rule and a mat, for images |
-| `::: {.qr url="..."}` | Scannable QR code; optional `size="2in"` and `label="..."` |
+| `::: {.qr url="..."}` | Scannable QR code; optional `size="2in"`, `label="..."` and `offset="0.25in"` |
 
 A `.full-width` float is not cheap. It costs its own height **plus** 0.4 in of
 clearance out of *every* column, not out of one — a 1.5 in strip on a
@@ -122,6 +122,25 @@ mounted poster so people can hold a phone to them.
 Uses [`tiaoma`](https://typst.app/universe/package/tiaoma/), downloaded on
 first use and cached. The import is scoped, so a poster with no QR codes never
 fetches it. See `examples/qr-codes.qmd`.
+
+`offset` nudges the code down inside its layout cell, and negative values move
+it up:
+
+```markdown
+::: {.qr url="https://example.org" size="2in" offset="0.25in"}
+:::
+```
+
+It is for one job: putting a QR next to a logo whose artwork carries
+transparent padding. `layout-valign="center"` centres the two *blocks*, which
+is not the same as centring the two visible squares once one of them is mostly
+empty canvas. **This cannot be automated** — Typst cannot inspect an image's
+alpha channel, so it cannot find where the visible ink starts. Set the nudge by
+eye against a render; there is no number to compute.
+
+The offset reserves its height rather than sliding the block, so a nudge that
+pushes a QR past the bottom of the body is reported by the overflow guard
+instead of disappearing under the footer.
 
 ### Takeaway
 

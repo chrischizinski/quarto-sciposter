@@ -510,7 +510,14 @@
 //
 // 1.5in is the practical floor for a phone to lock on from arm's length; the
 // default is above it. Below that the code is decorative, not usable.
-#let poster-qr(url, size: 2in, label: none) = context {
+//
+// `offset` nudges the whole helper down inside its layout cell. It exists
+// because optical centring cannot be automated: Typst cannot inspect an
+// image's alpha channel, so it cannot trim the transparent canvas off a logo
+// and align its visible centre with a neighbouring QR. `layout-valign` centres
+// the blocks, which is not the same thing once one of them is mostly padding.
+// A hand-set nudge is the only route, so it is offered rather than implied.
+#let poster-qr(url, size: 2in, label: none, offset: 0pt) = context {
   import "@preview/tiaoma:0.3.0": qrcode
   let th = _theme.get()
   // Sizing is delegated to the body `show image` rule, which already rebuilds
@@ -518,7 +525,7 @@
   // enough. Sizing it here instead — via Typst `scale()` or zint's own scale
   // option — fights that rule and lands at the wrong size.
   let code = box(width: size, qrcode(url))
-  align(center, block(breakable: false, {
+  let body = align(center, block(breakable: false, {
     code
     if label != none {
       v(0.1in)
@@ -530,6 +537,12 @@
       text(..(size: 0.75em, weight: "medium") + th.caption-text-args, label)
     }
   }))
+  // `pad` rather than `move`: padding RESERVES the height, so a nudge that
+  // pushes the QR past the bottom of a fixed-height body row is caught by the
+  // overflow guard. `move(dy: ..)` would slide it out of the row silently.
+  // The zero case returns the block untouched so an author who never sets
+  // `offset` gets byte-identical output.
+  if offset == 0pt { body } else { pad(top: offset, body) }
 }
 
 // References: compact type, ragged right. `kind: "box"` adds the poster-box
