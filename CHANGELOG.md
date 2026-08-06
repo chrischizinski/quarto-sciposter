@@ -12,6 +12,33 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.7.0] — 2026-08-06
+
+### Added
+
+- `poster.title-sizes` — a `{subtitle, author, affiliation}` map of the three
+  type sizes under the poster title, merged over their defaults so naming one
+  leaves the other two alone. Same shape as `title-gaps`, deliberately.
+
+  It exists because those three defaults are ratios of two *different* bases:
+  the subtitle rides `title-font-size` at `0.58 ×`, while the byline and
+  affiliations ride `base-font-size` at `1.25 ×` and `0.95 ×`. Neither base can
+  lift the byline alone — raising `base-font-size` to reach an author-line
+  minimum resizes the whole poster, and `theme-overrides` cannot help because
+  these are explicit `size:` arguments at the call site, which beat anything
+  merged into `title-text-args`.
+
+  The case that produced it: UNL's poster template specifies 48–80 pt for the
+  subtitle and author line, and a poster set at 32 pt body could not reach it
+  from any existing option.
+
+### Unchanged
+
+A poster that sets no `title-sizes` renders byte-identically to 0.6.0 —
+verified by pixel diff for `template.qmd`, `a0-portrait`, `tables`,
+`template-controls` and `qr-codes`. The defaults are the same expressions that
+were previously inline.
+
 ## [0.6.0] — 2026-08-06
 
 Three layout knobs, taken from a real fork. The AFS 2026 poster had been
@@ -283,7 +310,8 @@ Under the Jupyter engine, per-chunk `fig-width` is ignored while the
 document-level option works, and `poster.palette` must be read out of the front
 matter — there is no `rmarkdown::metadata` equivalent. See `examples/python.qmd`.
 
-[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.7.0
 [0.6.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.6.0
 [0.5.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.5.0
 [0.4.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.4.0
