@@ -1,11 +1,14 @@
 -- sciposter.lua — map fenced div classes to Typst layout functions
 --
 --   ::: {.full-width}   -> #full-width[ ... ]        (span all columns)
+--     optional position="top"|"bottom" attribute
 --   ::: {.col-break}    -> #colbreak()               (force column break)
 --   ::: {.poster-box}   -> #poster-box(...)[ ... ]   (framed box)
 --     variants: .highlight, .alert; optional title="..." attribute
 --   ::: {.takeaway}     -> #takeaway(...)[ ... ]     (3m headline finding)
---     optional label="..." and scale="..." attributes
+--     variant: .quiet; optional label="..." and scale="..." attributes
+--   ::: {.stats}        -> #stats-grid(...)          (evidence number strip)
+--     one paragraph per cell, `**value** label`; optional label="..."
 --   ::: {.qr url="..."} -> #poster-qr(...)           (scannable QR code)
 --     optional size="..." and label="..." attributes
 --   ::: {#refs}         -> #refs-section(...)[ ... ] per poster.refs
@@ -180,7 +183,38 @@ local function map_div(div)
   end
 
   if div.classes:includes("full-width") then
+    -- position="bottom" (or "top") pins the float to one page edge; without it
+    -- Typst picks the nearer one, which for a closing band is a coin toss.
+    -- The value is interpolated as a bare Typst alignment, so a typo is a
+    -- compile error rather than a silent fallback — the right failure for
+    -- something that gets printed once.
+    local position = div.attributes["position"]
+    if position then
+      return wrap(div, "#full-width(position: " .. position .. ")[")
+    end
     return wrap(div, "#full-width[")
+  end
+
+  -- ::: {.stats} — one paragraph per cell, each `**value** label`. Every
+  -- top-level block is handed over as a positional argument so the Typst side
+  -- can lay them out on a shared grid.
+  if div.classes:includes("stats") then
+    local args = {}
+    if div.attributes["label"] then
+      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+    end
+    local open = "#stats-grid(" .. table.concat(args, ", ")
+    if #args > 0 then
+      open = open .. ", "
+    end
+    local blocks = pandoc.Blocks({ pandoc.RawBlock("typst", open) })
+    for _, block in ipairs(div.content) do
+      blocks:insert(pandoc.RawBlock("typst", "["))
+      blocks:insert(block)
+      blocks:insert(pandoc.RawBlock("typst", "],"))
+    end
+    blocks:insert(pandoc.RawBlock("typst", ")"))
+    return blocks
   end
 
   -- ::: {.qr url="https://..."} — url is required; without it the div is
@@ -203,6 +237,9 @@ local function map_div(div)
     end
     if div.attributes["label"] then
       table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+    end
+    if div.classes:includes("quiet") then
+      table.insert(args, 'kind: "quiet"')
     end
     return wrap(div, "#takeaway(" .. table.concat(args, ", ") .. ")[")
   end

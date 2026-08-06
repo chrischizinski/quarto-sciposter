@@ -86,11 +86,17 @@ as many as fit.
 
 | Div | Effect |
 |---|---|
-| `::: {.full-width}` | Contents span every column (floats to top or bottom edge — Typst constraint) |
+| `::: {.full-width}` | Contents span every column (floats to top or bottom edge — Typst constraint); `position="top"` or `"bottom"` picks which |
 | `::: {.col-break}` | Force a column break |
 | `::: {.poster-box title="..."}` | Framed box; add `.highlight` or `.alert` for variants |
-| `::: {.takeaway label="..."}` | Headline finding, sized to read from across the aisle; optional `scale="2.2"` |
+| `::: {.takeaway label="..."}` | Headline finding, sized to read from across the aisle; optional `scale="2.2"`, add `.quiet` for the warm-surface variant |
+| `::: {.stats label="..."}` | Evidence strip: one paragraph per cell, `**value** label` |
 | `::: {.qr url="..."}` | Scannable QR code; optional `size="2in"` and `label="..."` |
+
+A `.full-width` float is not cheap. It costs its own height **plus** 0.4 in of
+clearance out of *every* column, not out of one — a 1.5 in strip on a
+three-column 48×36 removes 5.7 in of column content. Budget for it before
+writing the body, and expect at most one or two per poster.
 
 ### QR codes
 
@@ -124,6 +130,43 @@ Catch rates fell 40% after the regulation change.
 Renders as a filled block at `2.2 ×` body size. Use one per poster — two
 takeaways is none. `scale="3.0"` gets you to roughly 75 pt on an A0, which is
 the size that genuinely reads at 3 m.
+
+Adding `.quiet` keeps the type scale but puts it on the theme's warm surface
+in the primary colour instead of reversed out of a filled panel:
+
+```markdown
+::: {.takeaway .quiet label="Take-home" scale="1.4"}
+An open, reproducible path from survey planning to reported estimates.
+:::
+```
+
+That is what a closing statement wants once the loud takeaway is spent — a
+visual endpoint that does not read as a second headline.
+
+### Stats strip
+
+The 3–4 numbers a reader should be able to take without entering the prose.
+One paragraph per cell; the leading `**bold**` becomes the value tier.
+
+```markdown
+::: {.stats label="One simulated reservoir season"}
+**30** sampled days
+
+**90** counts
+
+**476** interviews
+
+**Every** estimate has a CI
+:::
+```
+
+Values render at `2 ×` body size in the theme's primary colour, labels beneath
+them at body size, all on one shared warm surface — the fill is what groups
+the cells, so they carry no borders of their own.
+
+Four cells is the practical maximum on a three-column 48×36: equal columns at
+`base-font-size: 28pt` in a 14.7 in column give each cell about 18 characters
+of label before it wraps. Five cells wraps every label.
 
 ## Typography
 
@@ -228,6 +271,33 @@ the YAML the single source. See `examples/r-figures.qmd`.
 
 Keep figure `base_size` high enough that axis text survives being scaled into
 a column; it needs to be legible at the 1.5 m scan, not just in RStudio.
+
+#### Two ways enlarging figure type fails silently
+
+Both of these clip the plot inside the SVG, before Typst ever sees it. Nothing
+warns, and the damage is only visible in the rendered PDF.
+
+**Raise `fig-width` and `base_size` together.** Effective on-poster type size
+is `base_size × (column width ÷ fig-width)`. Raising `base_size` alone
+eventually makes an axis title longer than the canvas it is drawn on, and
+ggplot cuts it at the canvas edge. Hold the ratio instead: `fig-width: 7` with
+`base_size = 11` and `fig-width: 10` with `base_size = 21` both land near
+30 pt in a 14.7 in column, but only the second has room to draw the labels.
+
+**Set `plot.margin` yourself.** `theme_minimal()`'s margin is half the base
+size, which at 21 pt is not wide enough to hold the half of an outermost axis
+label that hangs past the panel — the last tick label loses its right edge.
+While you are there, `plot.title.position = "plot"` starts a left-aligned
+panel title at the plot edge instead of after the y-axis labels, which is
+what keeps a two-panel `patchwork` title from running off the canvas.
+
+```r
+theme_creel(base_size = 21) +
+  theme(
+    plot.margin = margin(t = 10, r = 26, b = 8, l = 8),
+    plot.title.position = "plot"
+  )
+```
 
 ### Python
 
@@ -394,10 +464,20 @@ Swap citation styles with the standard `csl:` key.
 
 ## Overflow protection
 
-A poster is one page. If content is cut off at the page edge, the render
-paints a loud red **CONTENT OVERFLOW** banner on the poster instead of
-losing text silently. Fix by trimming content, adding columns, or growing
-the poster size.
+A poster is one page. If content is lost, the render paints a loud red
+**CONTENT OVERFLOW** banner on the poster instead of dropping text silently.
+Fix by trimming content, adding columns, or growing the poster size.
+
+Two things can go wrong, and the banner names which:
+
+- **“text below this page’s edge is CUT OFF”** — the body outgrew the columns
+  region and kept drawing past its bottom, over the footer bar or off the
+  page.
+- **“text is HIDDEN BEHIND a full-width float”** — a bottom-pinned
+  `.full-width` block shortens the columns region, and the body ran into the
+  space the float occupies. The float is painted on top, so the text is
+  invisible even though the poster is still one page and nothing reaches the
+  page edge. This is the quiet one: a poster in this state looks finished.
 
 ## Examples
 
