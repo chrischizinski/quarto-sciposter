@@ -1,0 +1,112 @@
+---
+# Positive control for the float branch of the overflow detector. Not an
+# example: this poster exists to overflow, and to overflow in one specific
+# way. It lives outside examples/ for that reason, and .quartoignore keeps it
+# out of the shipped extension. template.qmd is the matching negative control
+# — it carries a bottom-pinned float and must stay quiet.
+#
+# The failure it reproduces: a bottom-pinned `.full-width` float shortens the
+# columns region, but the body sits in a FIXED-height grid row, and Typst does
+# not clip a block that outgrows its row. Column text that runs past the
+# shortened region therefore keeps drawing, straight under the float, which is
+# painted on top of it. The result is one page, with the lost text sitting
+# well above the page bottom — so a guard that compares against the page edge
+# sees nothing wrong. That is exactly how a heading and a paragraph went
+# missing from template.qmd once already.
+#
+# One column, so every filler paragraph lands in the single column the float
+# shortens. The float is deliberately tall: the guard fires when the body ends
+# inside the float's span, and a tall float widens that window well past the
+# difference between one font stack's line metrics and another's. Measured on
+# this fixture, everything from 9 filler paragraphs upward fires and nothing
+# up to 28 crosses into the other branch; it carries 13, so a font with wider
+# metrics than the one this was tuned on only pushes it further inside.
+title: "Overflow guard fixture: content under a bottom float"
+format:
+  sciposter-typst:
+    poster:
+      size: a2
+      columns: 1
+---
+
+# Filler
+
+Creel surveys estimate angler effort, catch, harvest, and exploitation. The
+analysis is often assembled from spreadsheets, borrowed scripts, and
+disconnected software, so assumptions are hard to document and uncertainty is
+hard to carry forward.
+
+Standard data structures and validation make assumptions visible.
+Design-based estimation keeps sampling structure attached to the reported
+number. Comparisons hold up across systems, seasons, designs, and analysts.
+
+Each design brings its own estimator: stratified effort from periodic counts,
+Horvitz-Thompson expansion of PPS site selection, count imputation for
+cameras, and calibrated open-hours scaling for aerial overflights.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+The package automates the repeatable computation; survey objectives, design
+choices, and management decisions remain human work. Effort, CPUE, harvest,
+release, and exploitation all come back with variance attached.
+
+# This heading and the text under it are drawn behind the float
+
+Biologists work in creel vocabulary — dates, strata, counts, interviews,
+effort, catch, lengths, schedules — while the package handles design-based
+inference. None of this paragraph is visible in the rendered poster.
+
+::: {.full-width position="bottom"}
+::: {.takeaway label="Bottom float"}
+A bottom-pinned float is painted over whatever outgrew the columns region.
+It is deliberately tall: the guard fires when the body ends inside the
+float's span, and a taller float widens that window past the difference
+between one font's line metrics and another's.
+:::
+:::

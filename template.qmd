@@ -34,6 +34,14 @@ width. This extension provides all of that from plain Quarto markdown.
 One extension renders any poster size, at readable type, from plain markdown.
 :::
 
+::: {.stats label="At a glance"}
+**3** poster sizes
+
+**2** themes
+
+**8** div types
+:::
+
 ::: {.poster-box .highlight title="Supporting detail"}
 Fenced divs become styled boxes. Use `.highlight` or `.alert` variants and an
 optional `title` attribute.
@@ -62,12 +70,9 @@ Force a column break anywhere:
 Figures placed normally occupy their column. To span all columns, wrap in a
 `.full-width` div:
 
-::: {.full-width}
+::: {.full-width position="bottom"}
 ![A full-width figure spanning every column](logos/wide-figure.svg)
 :::
-
-More results text after the full-width figure continues flowing in columns as
-expected.
 
 # Conclusions
 
@@ -75,7 +80,10 @@ expected.
 One extension, any poster size, any column count, any number of logos.
 :::
 
+::: {.takeaway .quiet label="In short" scale="1.4"}
+Plain markdown in, print-ready poster out.
+:::
+
 # Acknowledgments
 
-Sponsor and cooperator logos go in the title bar via `logos.left` and
-`logos.right` lists in the YAML header.
+Logos go in the title bar via the `logos.left` and `logos.right` lists.

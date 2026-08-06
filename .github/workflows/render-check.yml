@@ -67,9 +67,43 @@ jobs:
             exit 1
           fi
 
-      - name: Check page dimensions
+      # A bottom-pinned .full-width float shortens the columns region, but the
+      # body sits in a fixed-height grid row that Typst will not clip, so
+      # column text that outgrows the region keeps drawing straight under the
+      # float. One page, well inside the page bottom, invisible — which is how
+      # a heading and a paragraph went missing from template.qmd once already.
+      # The fixture ends its body inside the float's span on purpose; a hit on
+      # the other message means it drifted into the plain-overflow branch and
+      # is no longer testing this.
+      - name: Check the overflow guard sees content hidden by a float
         run: |
           sudo apt-get install -y poppler-utils
+          quarto render tests/overflow-float.qmd --to sciposter-typst
+          text=$(pdftotext tests/overflow-float.pdf -)
+          if echo "$text" | grep -q 'CUT OFF'; then
+            echo "fixture tripped the plain-overflow branch, not the float one"
+            exit 1
+          fi
+          if echo "$text" | grep -q 'HIDDEN'; then
+            echo "guard fires on content drawn under a bottom float, as it must"
+          else
+            echo "guard did NOT fire on content hidden behind a full-width float"
+            exit 1
+          fi
+
+      # The negative control for the step above: template.qmd carries a
+      # bottom-pinned float of its own and fits, so it must stay quiet. Without
+      # this a guard that warned on every float would look green.
+      - name: Check a healthy poster with a bottom float stays quiet
+        run: |
+          if pdftotext template.pdf - | grep -q 'CONTENT OVERFLOW'; then
+            echo "template.pdf warns about overflow but fits"
+            exit 1
+          fi
+          echo "template.pdf carries a bottom float and does not warn"
+
+      - name: Check page dimensions
+        run: |
           pdfinfo template.pdf | grep -q "3456 x 2592" || { echo "template.pdf wrong size"; exit 1; }
           pdfinfo examples/a0-portrait.pdf | grep -q "A0" || { echo "a0-portrait.pdf wrong size"; exit 1; }
           for f in template.pdf examples/a0-portrait.pdf examples/qr-codes.pdf examples/tables.pdf; do

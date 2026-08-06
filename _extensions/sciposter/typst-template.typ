@@ -109,6 +109,26 @@
     takeaway-text-args: head-font + (fill: on-primary, weight: "bold"),
     takeaway-label-text-args: body-font
       + (fill: on-primary, weight: "medium", tracking: 0.08em),
+    // `kind: "quiet"` — same type scale, inverted surface. For a closing band
+    // that has to read as an endpoint without adding a second full-strength
+    // primary panel to a poster that already has one.
+    takeaway-quiet-box-args: (fill: box-bg),
+    takeaway-quiet-text-args: (fill: primary),
+    takeaway-quiet-label-text-args: (fill: fg.lighten(25%)),
+
+    // Evidence strip: 3-4 numbers a reader can take from several feet away
+    // without entering the prose. One shared surface, no per-cell border —
+    // the fill is what groups them, so the cells stay unenclosed.
+    //
+    // `stat-value-text-args` takes `primary` deliberately. The value tier is
+    // poster chrome, riding with the heading bars rather than with the data
+    // marks in a figure, so a "reserve the brand colour for the one decision
+    // in a plot" rule does not reach it.
+    stats-box-args: (fill: box-bg, radius: 6pt, inset: 0.35in),
+    stats-label-text-args: body-font
+      + (fill: fg.lighten(25%), weight: "medium", tracking: 0.08em),
+    stat-value-text-args: head-font + (fill: primary, weight: "bold"),
+    stat-label-text-args: body-font + (fill: fg, weight: "medium"),
 
     // Booktabs rules, not a grid. Typst's default table boxes every cell,
     // which at poster stroke-to-type ratios reads as a cage and competes with
@@ -268,13 +288,27 @@
 // Span all columns: parent-scoped float inside columns().
 // Floats can only land at the top or bottom of the page body (Typst
 // limitation); default lets Typst pick the nearer edge.
+//
+// The two markers record the float's vertical span for the overflow detector
+// in the page background. They are the span and not just a position because
+// column content that outgrows its region draws *over* a bottom-pinned float
+// rather than past the page edge — "did the body end inside a float?" is the
+// only way to see that, and a single marker cannot tell a bottom float (which
+// content must stay above) from a top one (which it must stay below).
+//
+// Both go through `place`, which contributes no size, so a poster that never
+// reads them lays out exactly as it did before they existed.
 #let full-width(position: auto, body) = context {
   place(
     position,
     scope: "parent",
     float: true,
     clearance: 0.4in,
-    block(width: 100%, body),
+    block(width: 100%, {
+      place(top + left, [#metadata("float") <sciposter-float-top>])
+      body
+      place(bottom + left, [#metadata("float") <sciposter-float-bottom>])
+    }),
   )
 }
 
@@ -302,20 +336,75 @@
 // aisle. Sized as a multiple of base rather than a fixed point size so it
 // tracks the poster's scale; `scale: 3.0` on an a0 lands near the 75pt that
 // reads at 3m. Deliberately loud — a poster with two of these has none.
-#let takeaway(scale: 2.2, label: none, body) = context {
+//
+// `kind:` overlays a `takeaway-<kind>-*-args` dict on each of the three arg
+// sets, the same way poster-box's kind works. "default" names no overlay, so
+// a takeaway written before this existed renders unchanged.
+#let takeaway(scale: 2.2, label: none, kind: "default", body) = context {
   let th = _theme.get()
   let base = text.size
+  let overlay(name) = (
+    th.at("takeaway-" + name + "-args")
+      + th.at("takeaway-" + kind + "-" + name + "-args", default: (:))
+  )
   block(
     width: 100%,
     breakable: false,
-    ..th.takeaway-box-args,
+    ..overlay("box"),
     {
       set par(justify: false, leading: 0.5em)
       if label != none {
-        text(..(size: 0.9 * base) + th.takeaway-label-text-args, upper(label))
+        text(..(size: 0.9 * base) + overlay("label-text"), upper(label))
         v(0.18in)
       }
-      text(..(size: scale * base) + th.takeaway-text-args, body)
+      text(..(size: scale * base) + overlay("text"), body)
+    },
+  )
+}
+
+// Evidence strip: the 3-4 numbers a reader should take without entering the
+// prose. Each cell is one paragraph, `**value** rest-of-line`.
+//
+// The value tier is reached through a `show strong` rule rather than a
+// separate argument so a cell stays ordinary markdown — the Lua filter only
+// has to hand each block over as a positional argument, with no inline
+// parsing.
+//
+// Columns are equal fractions of the strip, which at `base-font-size: 28pt`
+// in a 14.7in column gives each of four cells roughly 18 characters of label
+// before it wraps. Four is the practical maximum on a three-column 48x36;
+// five wraps every label.
+#let stats-grid(label: none, ..cells) = context {
+  let th = _theme.get()
+  let base = text.size
+  let items = cells.pos()
+  block(
+    width: 100%,
+    breakable: false,
+    ..th.stats-box-args,
+    {
+      set par(justify: false, leading: 0.5em)
+      if label != none {
+        text(..(size: 0.9 * base) + th.stats-label-text-args, upper(label))
+        v(0.25in)
+      }
+      grid(
+        columns: (1fr,) * items.len(),
+        // Tighter than the poster's section gutter: cells are already told
+        // apart by the value tier, and the extra width buys each label a
+        // second word before it wraps.
+        column-gutter: 0.35in,
+        align: top,
+        ..items.map(cell => {
+          // A linebreak after the value keeps it on its own line without
+          // asking the author to write one; the label then wraps beneath it.
+          show strong: it => {
+            text(..(size: 2.0 * base) + th.stat-value-text-args, it.body)
+            linebreak()
+          }
+          text(..th.stat-label-text-args, cell)
+        }),
+      )
     },
   )
 }
@@ -343,8 +432,11 @@
     if label != none {
       v(0.1in)
       set par(justify: false, leading: 0.45em)
-      // A QR caption is a caption: it rides the same tier as figure captions.
-      text(..(size: 0.65em, weight: "medium") + th.caption-text-args, label)
+      // A QR caption is a caption: it rides the same tier as figure captions
+      // (0.75 x base), not a tier of its own. It names the destination of the
+      // one thing on the poster a reader can act on, so it has to survive at
+      // the distance the reader is standing when they decide to scan.
+      text(..(size: 0.75em, weight: "medium") + th.caption-text-args, label)
     }
   }))
 }
@@ -498,8 +590,15 @@
     // A poster is one page; overflowing body text is CLIPPED at the page
     // edge, not moved to page 2 — so losing it silently is the real hazard.
     // A zero-size marker sits at the very end of the body; if it laid out
-    // past the page bottom (or never laid out), content was cut off. Warn
-    // loudly on the poster itself so it never slips through to print.
+    // past where the columns are allowed to end (or never laid out), content
+    // was cut off. Warn loudly on the poster itself so it never slips through
+    // to print.
+    //
+    // The reference is the bottom of the columns region, NOT the page bottom.
+    // The body sits in a fixed-height grid row, and Typst does not clip a
+    // block that outgrows it, so overflowing content keeps drawing — over the
+    // footer bar, or over a bottom-pinned `.full-width` float — while staying
+    // comfortably inside the page. Against `page-h` all of that reads as fine.
     background: context {
       let warn(msg) = place(
         top + center,
@@ -523,12 +622,32 @@
         warn([CONTENT OVERFLOW — does not fit the poster page])
       } else {
         let m = query(<sciposter-end>)
-        let overflowed = m.len() == 0 or {
-          let pos = m.first().location().position()
-          m.first().location().page() > 1 or pos.y > page-h
-        }
-        if overflowed {
+        // Where the columns are allowed to end. Reported by a marker placed
+        // on the body block's inner bottom edge, so an optional footer bar of
+        // any height needs no arithmetic here.
+        let edge = query(<sciposter-body-bottom>)
+        let body-bottom = if edge.len() > 0 {
+          edge.first().location().position().y
+        } else { page-h }
+        // A float the body ended *inside* is a collision: the float is drawn
+        // on top, so whatever shares those coordinates is hidden. Tops and
+        // bottoms are paired by index — `full-width` emits them together and
+        // query() returns both lists in layout order.
+        let tops = query(<sciposter-float-top>).map(f => f.location().position().y)
+        let bottoms = query(<sciposter-float-bottom>).map(f => f.location().position().y)
+        let inside-float(y) = tops.zip(bottoms).any(((t, b)) => y > t and y < b)
+        // Two different diagnoses, so they get two different messages: one
+        // says shorten the poster, the other says the full-width float is
+        // eating the column it sits under.
+        if m.len() == 0 or m.first().location().page() > 1 {
           warn([CONTENT OVERFLOW — text below this page's edge is CUT OFF])
+        } else {
+          let y = m.first().location().position().y
+          if y > body-bottom {
+            warn([CONTENT OVERFLOW — text below this page's edge is CUT OFF])
+          } else if inside-float(y) {
+            warn([CONTENT OVERFLOW — text is HIDDEN BEHIND a full-width float])
+          }
         }
       }
     },
@@ -761,7 +880,16 @@
       width: 100%,
       height: 100%,
       inset: (x: margin, top: 0.6 * margin, bottom: 0.6 * margin),
-      columns(n-columns, gutter: gutter, body-styled),
+      {
+        // The line the columns are not allowed to cross, reported rather than
+        // recomputed: `place` inside this block resolves against its content
+        // area, so the marker lands exactly on the inner bottom edge. Deriving
+        // it in the background instead would mean measuring the footer bar
+        // there, and `measure` in a page background has no width to resolve a
+        // `width: 100%` block against.
+        place(bottom + left, [#metadata("body") <sciposter-body-bottom>])
+        columns(n-columns, gutter: gutter, body-styled)
+      },
     ),
     ..if footerbar != none { (footerbar,) } else { () },
   )
