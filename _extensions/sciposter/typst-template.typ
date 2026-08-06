@@ -130,6 +130,11 @@
     refs-box-args: (fill: box-bg, radius: 4pt, inset: 0.25in),
     footer-box-args: (fill: accent),
     footer-text-args: body-font + (fill: on-primary),
+
+    // Deliberately quiet: a credit line is not poster content and must not
+    // compete with it at reading distance. Sized off the body rather than
+    // fixed, so it stays proportionally small on an A0 as on an A4.
+    credit-text-args: body-font + (fill: fg.lighten(45%)),
   )
 }
 
@@ -397,6 +402,7 @@
   refs-kind: "flow",
   palette: none,
   draft: false,
+  credit: none,
   body,
 ) = {
   // Precedence: theme supplies the base, `_brand.yml` overrides what it
@@ -445,6 +451,45 @@
   // Author palette overrides the theme's; both feed R via YAML metadata.
   let palette = if palette == none { th.at("palette", default: ()) } else { palette }
 
+  // Footer: single string centers; left/center/right slots for the 3-part
+  // layout (event | contact | url etc.). Built before `set page` because the
+  // credit line has to measure it to avoid printing on top of it.
+  let footerbar = if (footer-text, footer-left, footer-right) != (none, none, none) {
+    block(
+      width: 100%,
+      inset: (x: margin, y: 0.3in),
+      ..th.footer-box-args,
+      {
+        set text(..(size: 0.9 * base-font-size) + th.footer-text-args)
+        grid(
+          columns: (1fr, auto, 1fr),
+          column-gutter: 0.5in,
+          align: (left + horizon, center + horizon, right + horizon),
+          if footer-left != none { footer-left } else { [] },
+          if footer-text != none { footer-text } else { [] },
+          if footer-right != none { footer-right } else { [] },
+        )
+      },
+    )
+  } else { none }
+
+  // Credit line: off unless asked for. `true` takes the default corner,
+  // `bottom-left` / `bottom-right` choose one.
+  //
+  // Only the bottom corners are offered. The top edge of a poster is the
+  // title bar, so a muted credit placed there either disappears into the
+  // accent fill or competes with the title — neither is worth a config
+  // option. An unrecognised value still prints, in the default corner,
+  // rather than vanishing and leaving the author to wonder why.
+  let credit-label = [Built with quarto-sciposter]
+  let credit-align = if credit in (none, "false", "none") {
+    none
+  } else if credit == "bottom-left" {
+    bottom + left
+  } else {
+    bottom + right
+  }
+
   set page(
     width: page-w,
     height: page-h,
@@ -491,7 +536,19 @@
     // render. Reports the two measurable constraints (line measure, and what
     // distance each type tier is actually sized for) so they can be judged
     // before printing rather than at the poster session.
-    foreground: if draft {
+    foreground: {
+    // `context` because the credit measures the footer bar to clear it rather
+    // than printing on top of it. With no footer that measures zero and the
+    // credit sits on the bottom margin.
+    if credit-align != none {
+      context place(
+        credit-align,
+        dx: if credit-align.x == left { margin } else { -margin },
+        dy: -0.3 * margin - measure(footerbar).height,
+        text(..(size: 0.5 * base-font-size) + th.credit-text-args, credit-label),
+      )
+    }
+    if draft {
       let col-w = column-width(page-w, margin, n-columns, gutter)
       let cpl = chars-per-line(col-w, base-font-size)
       let verdict = if cpl > 75 { ("OVER", rgb("#ff6b6b")) } else if cpl < 45 {
@@ -553,7 +610,8 @@
           },
         ),
       )
-    } else { none },
+    }
+    },
   )
   // Computed sizes go UNDER the theme dict throughout, so a theme (or an
   // override) that names `size` explicitly wins over the derived default.
@@ -662,27 +720,6 @@
     titlebar,
     block(width: 100%, height: 0.12in, ..th.stripe-args),
   )
-
-  // Footer: single string centers; left/center/right slots for the 3-part
-  // layout (event | contact | url etc.).
-  let footerbar = if (footer-text, footer-left, footer-right) != (none, none, none) {
-    block(
-      width: 100%,
-      inset: (x: margin, y: 0.3in),
-      ..th.footer-box-args,
-      {
-        set text(..(size: 0.9 * base-font-size) + th.footer-text-args)
-        grid(
-          columns: (1fr, auto, 1fr),
-          column-gutter: 0.5in,
-          align: (left + horizon, center + horizon, right + horizon),
-          if footer-left != none { footer-left } else { [] },
-          if footer-text != none { footer-text } else { [] },
-          if footer-right != none { footer-right } else { [] },
-        )
-      },
-    )
-  } else { none }
 
   // Body images fill their column (or full-width span) by default. Quarto
   // wraps figure images in auto-sized box/figure containers where relative

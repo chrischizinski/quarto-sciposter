@@ -77,6 +77,7 @@ logos:
 | `palette` | theme default | Figure colors, shared with R chunks (see Figure colors) |
 | `table-css` | `theme` | How much CSS to drop from HTML tables: `theme`, `size-only`, `keep` (see Tables) |
 | `draft` | `false` | Overlay a diagnostics panel on the render (see Draft mode) |
+| `credit` | `false` | Print a "Built with quarto-sciposter" line (see Credit line) |
 
 `logos.left` / `logos.right` (top-level keys) take lists of image paths —
 as many as fit.
@@ -259,6 +260,23 @@ line, the palette, and what reading distance each type tier is actually sized
 for. Off by default — nothing changes in a final render. Word count is not
 computed in Typst; check it with `pdftotext out.pdf - | wc -w` and aim under
 800 words.
+
+## Credit line
+
+```yaml
+poster:
+  credit: true            # or: bottom-left / bottom-right
+```
+
+Prints a small, muted **Built with quarto-sciposter** in a bottom corner.
+`true` uses the bottom right; `bottom-left` and `bottom-right` choose. Off
+unless asked for, so upgrading never adds text to a poster that was already
+laid out and printed.
+
+It sits above the footer bar when there is one, and on the bottom margin when
+there is not. Only the bottom corners are offered: the top edge of a poster is
+the title bar, where a muted line either disappears into the accent fill or
+competes with the title.
 
 ## Figures
 

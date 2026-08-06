@@ -71,6 +71,12 @@ $endif$
 $if(poster.draft)$
   draft: true,
 $endif$
+$-- Interpolated rather than tested with `$if()$`, so that `true`, `false` and
+$-- a corner name all reach the template as strings; `$if()$` cannot tell
+$-- `false` from absent. sciposter() maps "false"/"none" to no credit.
+$if(poster.credit)$
+  credit: "$poster.credit$",
+$endif$
 $if(poster.footer)$
   footer-text: [$poster.footer$],
 $endif$
