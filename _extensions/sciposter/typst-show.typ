@@ -49,9 +49,12 @@ $endif$
 $if(poster.theme-overrides-typst)$
   theme-overrides: $poster.theme-overrides-typst$,
 $endif$
-$-- A dict of lengths, so it takes the same route as theme-overrides.
+$-- Dicts of lengths, so they take the same route as theme-overrides.
 $if(poster.title-gaps-typst)$
   title-gaps: $poster.title-gaps-typst$,
+$endif$
+$if(poster.title-sizes-typst)$
+  title-sizes: $poster.title-sizes-typst$,
 $endif$
 $-- These two are plain strings; sciposter() maps them to Typst alignments.
 $if(poster.heading-align)$
