@@ -12,6 +12,65 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.3.0] — 2026-08-06
+
+Four changes that came out of a design review of a real 48x36 poster. Each is
+something the review asked for that the extension had no way to express, so
+the poster could not be fixed in its `.qmd` alone.
+
+### Added
+
+- `::: {.stats}` renders an evidence strip: the 3-4 numbers a reader should
+  take without entering the prose. One paragraph per cell, `**value** label`.
+  An optional `label="..."` puts a kicker above the row.
+
+  Equal columns at `base-font-size: 28pt` in a 14.7in column give each of four
+  cells about 18 characters of label before it wraps. Four cells is the
+  practical maximum on a three-column 48x36; five wraps every label.
+
+- `::: {.takeaway .quiet}` keeps the takeaway type scale on the theme's warm
+  surface instead of a filled primary panel. For a closing endpoint on a
+  poster whose one loud takeaway is already spent.
+
+- `::: {.full-width position="bottom"}` pins a full-width float to a page edge.
+  `full-width` already took `position:` in Typst; the filter never passed it,
+  so every float got `auto` and Typst chose the nearer edge.
+
+  Worth knowing before reaching for it: a parent-scoped float costs its height
+  *plus* 0.4in of clearance out of **every** column, not out of one. On a
+  three-column 48x36 a 1.5in strip removes 5.7in of column content.
+
+### Fixed
+
+- The overflow detector now catches content hidden behind a bottom-pinned
+  `.full-width` float, and reports it with its own message. A bottom float
+  shortens the columns region, but the body sits in a fixed-height grid row
+  that Typst will not clip, so column text that outgrows the region keeps
+  drawing straight under the float — which is painted over it. The poster
+  stays one page and nothing reaches the page edge, so the guard was silent
+  while a heading and a paragraph went missing from `template.qmd`.
+
+  `full-width` now records its vertical span, and the body ending inside that
+  span is the collision test.
+
+- The plain-overflow branch compares against the bottom of the columns region
+  rather than the bottom of the page. Content could previously spill several
+  inches past the columns, drawing over the footer bar, and still measure as
+  fine. The reference comes from a marker placed on the body block's inner
+  edge, so an optional footer of any height needs no arithmetic.
+
+- `tests/overflow-float.qmd` is the positive control for the float branch;
+  `template.qmd` carries a bottom float that fits and is the negative one.
+  Both run in `render-check`.
+
+### Changed
+
+- QR labels moved from `0.65em` to `0.75em`, the poster's own caption tier. A
+  QR code is the one element on a printed poster a reader can act on, and its
+  label has to survive at the distance they are standing when they decide to
+  scan. This is a 15% increase on one short line, so reflow risk is small, but
+  it does change existing output.
+
 ## [0.2.0] — 2026-08-06
 
 ### Added
