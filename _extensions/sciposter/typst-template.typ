@@ -605,6 +605,7 @@
   heading-align: "left",
   stats-align: "left",
   title-gaps: (:),
+  title-sizes: (:),
   block-gap: auto,
   code-fonts: none,
   code-font-size: auto,
@@ -996,6 +997,20 @@
   // defaults means naming one gap leaves the other two alone.
   let gaps = (subtitle: 0.2in, author: 0.35in, affiliation: 0.18in) + title-gaps
 
+  // The three type sizes under the title, same shape as `title-gaps` and for
+  // the same reason. Their defaults are RATIOS of two different bases — the
+  // subtitle rides the title, the byline and affiliations ride the body — so
+  // a poster that needs one of them at an absolute size (a printer's house
+  // minimum, say) has no way to express it by adjusting either base: moving
+  // `base-font-size` to lift the byline would resize the whole poster.
+  // Computed here, after both bases resolve, and merged under the author's
+  // dict so naming one size leaves the other two on their ratios.
+  let sizes = (
+    subtitle: 0.58 * title-font-size,
+    author: 1.25 * base-font-size,
+    affiliation: 0.95 * base-font-size,
+  ) + title-sizes
+
   let titlebar = block(
     width: 100%,
     inset: (x: margin, y: 0.6 * margin),
@@ -1012,15 +1027,15 @@
         text(size: title-font-size, weight: "bold", title)
         if subtitle != none {
           v(gaps.subtitle)
-          text(size: 0.58 * title-font-size, subtitle)
+          text(size: sizes.subtitle, subtitle)
         }
         if author-line != none {
           v(gaps.author)
-          text(size: 1.25 * base-font-size, weight: "medium", author-line)
+          text(size: sizes.author, weight: "medium", author-line)
         }
         if affiliation-line != none {
           v(gaps.affiliation)
-          text(size: 0.95 * base-font-size, affiliation-line)
+          text(size: sizes.affiliation, affiliation-line)
         }
       },
       logo-stack(logos-right),

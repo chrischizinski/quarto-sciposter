@@ -23,6 +23,11 @@ format:
       # Name one gap and the other two keep their defaults.
       title-gaps:
         author: "0.22in"
+      # Same for the type sizes under the title. The byline defaults to a
+      # ratio of the BODY size, so this is the only way to lift it without
+      # resizing the whole poster.
+      title-sizes:
+        author: "40pt"
       # Code quieter than the prose beside it. 0.75-0.85 of body is usual.
       code-font-size: "22pt"
       code-fonts: ["DejaVu Sans Mono", "Menlo"]

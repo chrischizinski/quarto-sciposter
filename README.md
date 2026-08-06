@@ -75,6 +75,7 @@ logos:
 | `heading-align` | `left` | `left` \| `center` \| `right` for level-1 section bars |
 | `stats-align` | `left` | Same, for the cells of an evidence strip |
 | `title-gaps` | see Title bar | `{subtitle, author, affiliation}` gaps down the title bar |
+| `title-sizes` | see Title bar | `{subtitle, author, affiliation}` type sizes under the title |
 | `brand` | `true` | Set `false` to ignore the project's `_brand.yml` |
 | `logo-height` | `1.5in` | Height of every title-bar logo |
 | `footer` | — | String (centered) or `{left, center, right}` map |
@@ -388,6 +389,24 @@ a single factor because a poster that has to tighten them rarely tightens them
 evenly: a six-author byline needs different treatment from its affiliation
 line. Reach for this when the title bar's bottom inset starts eating the
 affiliations.
+
+The three type sizes take the same shape:
+
+```yaml
+poster:
+  title-sizes:
+    subtitle: "48pt"
+    author: "48pt"
+    affiliation: "32pt"
+```
+
+Their defaults are ratios of two *different* bases — the subtitle rides
+`title-font-size` at `0.58 ×`, the byline and affiliations ride
+`base-font-size` at `1.25 ×` and `0.95 ×`. That is why they need their own
+option: neither base can lift the byline on its own, because raising
+`base-font-size` to reach it resizes the entire poster. Set one when a venue
+imposes an absolute floor — several university print shops specify a minimum
+for the author line — and the other two stay on their ratios.
 
 ## Code at poster scale
 
