@@ -12,6 +12,18 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.8.0] — 2026-08-07
+
+### Added
+
+- `poster.subheading-align` — `left` | `center` | `right` for level-2
+  subheadings, mirroring `heading-align` for level-1 section bars. Alignment
+  cannot travel through `theme-overrides`: `subheading-text-args` is spread
+  into `text()` and `subheading-box-args` into `block()`, and neither takes an
+  alignment parameter. Defaults to `left`, and the `left` case returns the text
+  bare rather than wrapping it in `align(left, ..)`, so posters that do not ask
+  for this render byte-identically.
+
 ## [0.7.0] — 2026-08-06
 
 ### Added

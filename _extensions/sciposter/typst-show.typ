@@ -56,9 +56,12 @@ $endif$
 $if(poster.title-sizes-typst)$
   title-sizes: $poster.title-sizes-typst$,
 $endif$
-$-- These two are plain strings; sciposter() maps them to Typst alignments.
+$-- These three are plain strings; sciposter() maps them to Typst alignments.
 $if(poster.heading-align)$
   heading-align: "$poster.heading-align$",
+$endif$
+$if(poster.subheading-align)$
+  subheading-align: "$poster.subheading-align$",
 $endif$
 $if(poster.stats-align)$
   stats-align: "$poster.stats-align$",

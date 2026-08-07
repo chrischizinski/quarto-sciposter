@@ -73,6 +73,7 @@ logos:
 | `theme-overrides` | — | Per-element style overrides (see Overriding theme elements) |
 | `block-gap` | theme default | One vertical gap above and below every styled block |
 | `heading-align` | `left` | `left` \| `center` \| `right` for level-1 section bars |
+| `subheading-align` | `left` | Same, for level-2 subheadings |
 | `stats-align` | `left` | Same, for the cells of an evidence strip |
 | `title-gaps` | see Title bar | `{subtitle, author, affiliation}` gaps down the title bar |
 | `title-sizes` | see Title bar | `{subtitle, author, affiliation}` type sizes under the title |
@@ -354,11 +355,13 @@ the uniform rhythm everywhere and make one exception.
 ```yaml
 poster:
   heading-align: center
+  subheading-align: center
   stats-align: center
 ```
 
-`heading-align` centres the level-1 section bars; `stats-align` centres the
-cells of an evidence strip. Both default to `left`. A value other than `left`,
+`heading-align` centres the level-1 section bars, `subheading-align` the
+level-2 subheadings, and `stats-align` the cells of an evidence strip. All
+three default to `left`. A value other than `left`,
 `center` or `right` stops the render with a named error rather than quietly
 falling back — the wrong alignment on a poster tends to be noticed at the
 printer.
