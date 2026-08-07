@@ -603,6 +603,7 @@
   // `block-gap` and `logo-height` instead, which are the same kind of thing:
   // poster-level layout, not theme colour.
   heading-align: "left",
+  subheading-align: "left",
   stats-align: "left",
   title-gaps: (:),
   title-sizes: (:),
@@ -913,6 +914,7 @@
   // byte-identically. `heading-text-args` cannot do this job: it is spread
   // into `text()`, which has no alignment parameter.
   let heading-h = _h-align(heading-align)
+  let subheading-h = _h-align(subheading-align)
   show heading.where(level: 1): it => block(
     width: 100%,
     ..th.heading-box-args,
@@ -924,7 +926,10 @@
   show heading.where(level: 2): it => block(
     width: 100%,
     ..th.subheading-box-args,
-    text(..(size: 1.25 * base-font-size) + th.subheading-text-args, it.body),
+    {
+      let inner = text(..(size: 1.25 * base-font-size) + th.subheading-text-args, it.body)
+      if subheading-h == left { inner } else { align(subheading-h, inner) }
+    },
   )
   show link: set text(..th.link-text-args)
   // Code. Quarto emits its own `show raw.where(block: true)` in the preamble,

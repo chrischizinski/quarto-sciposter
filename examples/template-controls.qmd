@@ -19,6 +19,7 @@ format:
       # Layout, not colour, so these sit here rather than in theme-overrides —
       # that route merges dict into dict and cannot carry an alignment.
       heading-align: center
+      subheading-align: center
       stats-align: center
       # Name one gap and the other two keep their defaults.
       title-gaps:
@@ -108,6 +109,11 @@ and wrap the whole div in `.full-width` to align across the poster.
 :::
 
 # Centred evidence
+
+## A centred subheading
+
+`subheading-align: center` centres level-2 subheadings, the way
+`heading-align` does for the level-1 bars above. Both default to `left`.
 
 `stats-align: center` centres the cells of the evidence strip. Left is the
 default, and reads better when the labels run past one line.
