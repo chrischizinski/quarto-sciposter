@@ -21,6 +21,7 @@ format:
       heading-align: center
       subheading-align: center
       stats-align: center
+      takeaway-align: center
       # Name one gap and the other two keep their defaults.
       title-gaps:
         author: "0.22in"
@@ -117,6 +118,10 @@ and wrap the whole div in `.full-width` to align across the poster.
 
 `stats-align: center` centres the cells of the evidence strip. Left is the
 default, and reads better when the labels run past one line.
+
+`takeaway-align: center` centres a closing band, label and headline together.
+A short slogan reads as a statement centred; a band that wraps to three or more
+lines reads better left.
 
 ::: {.stats label="At a glance"}
 **3** poster sizes
