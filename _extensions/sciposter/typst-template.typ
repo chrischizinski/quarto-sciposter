@@ -450,17 +450,25 @@
     th.at("takeaway-" + name + "-args")
       + th.at("takeaway-" + kind + "-" + name + "-args", default: (:))
   )
+  // Label and body align together: a centred headline over a left-set label
+  // reads as a mistake. As with the headings, the `left` case returns the
+  // content bare rather than wrapping it in `align(left, ..)`, so a poster
+  // that never asks for this renders byte-identically.
+  let h = th.at("takeaway-align", default: left)
   block(
     width: 100%,
     breakable: false,
     ..overlay("box"),
     {
       set par(justify: false, leading: 0.5em)
-      if label != none {
-        text(..(size: 0.9 * base) + overlay("label-text"), upper(label))
-        v(0.18in)
+      let inner = {
+        if label != none {
+          text(..(size: 0.9 * base) + overlay("label-text"), upper(label))
+          v(0.18in)
+        }
+        text(..(size: scale * base) + overlay("text"), body)
       }
-      text(..(size: scale * base) + overlay("text"), body)
+      if h == left { inner } else { align(h, inner) }
     },
   )
 }
@@ -596,7 +604,7 @@
   theme: "generic",
   theme-colors: (:),
   theme-overrides: (:),
-  // Three layout knobs that `theme-overrides` cannot carry. That route merges
+  // Four layout knobs that `theme-overrides` cannot carry. That route merges
   // a dict INTO a dict (`th.at(key) + value`), so an alignment or a bare
   // length has no way through it — and `heading-*-args` are spread into
   // `text()`, which has no alignment parameter at all. They sit here with
@@ -605,6 +613,7 @@
   heading-align: "left",
   subheading-align: "left",
   stats-align: "left",
+  takeaway-align: "left",
   title-gaps: (:),
   title-sizes: (:),
   block-gap: auto,
@@ -901,10 +910,12 @@
   // disruptive at 1m than a soft right edge.
   set par(justify: false, leading: 0.65em)
   set heading(numbering: none)
-  // Carried on the theme state because stats-grid() is a free helper with no
-  // access to these arguments. Inserted after the theme-overrides merge above
-  // so it cannot collide with a key an author named there.
+  // Carried on the theme state because stats-grid() and takeaway() are free
+  // helpers with no access to these arguments. Inserted after the
+  // theme-overrides merge above so they cannot collide with a key an author
+  // named there.
   th.insert("stats-align", _h-align(stats-align))
+  th.insert("takeaway-align", _h-align(takeaway-align))
   _theme.update(th)
 
   // Section headings: filled bars in theme colors.

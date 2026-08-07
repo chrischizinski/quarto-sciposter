@@ -12,6 +12,20 @@ file, commit, then tag to match.
 
 Nothing yet.
 
+## [0.9.0] — 2026-08-07
+
+### Added
+
+- `poster.takeaway-align` — `left` | `center` | `right` for a `.takeaway`
+  closing band, completing the set alongside `heading-align`,
+  `subheading-align` and `stats-align`. Same reason as those: alignment cannot
+  travel through `theme-overrides`, which merges dict into dict, and
+  `takeaway-text-args` is spread into `text()`, which has no alignment
+  parameter. Label and headline align together — a centred headline over a
+  left-set label reads as a mistake. Defaults to `left`, and the `left` case
+  returns the content bare rather than wrapping it in `align(left, ..)`, so
+  posters that do not ask for this render byte-identically.
+
 ## [0.8.0] — 2026-08-07
 
 ### Added

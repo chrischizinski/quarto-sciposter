@@ -75,6 +75,7 @@ logos:
 | `heading-align` | `left` | `left` \| `center` \| `right` for level-1 section bars |
 | `subheading-align` | `left` | Same, for level-2 subheadings |
 | `stats-align` | `left` | Same, for the cells of an evidence strip |
+| `takeaway-align` | `left` | Same, for a `.takeaway` closing band |
 | `title-gaps` | see Title bar | `{subtitle, author, affiliation}` gaps down the title bar |
 | `title-sizes` | see Title bar | `{subtitle, author, affiliation}` type sizes under the title |
 | `brand` | `true` | Set `false` to ignore the project's `_brand.yml` |
@@ -357,11 +358,14 @@ poster:
   heading-align: center
   subheading-align: center
   stats-align: center
+  takeaway-align: center
 ```
 
 `heading-align` centres the level-1 section bars, `subheading-align` the
-level-2 subheadings, and `stats-align` the cells of an evidence strip. All
-three default to `left`. A value other than `left`,
+level-2 subheadings, `stats-align` the cells of an evidence strip, and
+`takeaway-align` a `.takeaway` closing band — label and headline together, since
+a centred headline over a left-set label reads as a mistake. All
+four default to `left`. A value other than `left`,
 `center` or `right` stops the render with a named error rather than quietly
 falling back — the wrong alignment on a poster tends to be noticed at the
 printer.
