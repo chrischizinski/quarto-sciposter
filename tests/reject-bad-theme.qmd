@@ -1,0 +1,17 @@
+---
+# Negative control for the theme guard. Not an example: this poster exists to
+# FAIL the render, and it lives outside examples/ for that reason.
+#
+# `unnl` is a typo for `unl`. Unknown theme names used to fall through to
+# `generic`, so the poster printed in the wrong colours and said nothing about
+# it — the same printed-once hazard as the size fixture beside this one.
+title: "Theme guard fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a2
+      columns: 1
+      theme: unnl
+---
+
+Body.

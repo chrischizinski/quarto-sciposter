@@ -256,14 +256,27 @@
   "a2": (16.54in, 23.39in),
 )
 
+// An unrecognised size used to fall back to 48x36 without a word, which meant
+// `size: a3` (there is no a3) or `size: "36X24"` (capital X) produced a
+// full-size poster that looked deliberate. A poster is printed once, so a name
+// the template does not know has to stop the render, not be guessed at. Same
+// reasoning as _h-align above.
 #let resolve-size(size, orientation) = {
-  let dims = if type(size) == str and lower(size) in named-sizes {
-    named-sizes.at(lower(size))
-  } else if type(size) == str and size.contains("x") {
-    let parts = size.split("x")
+  let name = if type(size) == str { lower(size).trim() } else { size }
+  let expected = (
+    "poster size must be \"WxH\" in inches (\"48x36\") or one of "
+      + named-sizes.keys().join(", ")
+  )
+  let dims = if type(name) == str and name in named-sizes {
+    named-sizes.at(name)
+  } else if type(name) == str and name.contains("x") {
+    let parts = name.split("x")
+    if parts.len() != 2 {
+      panic(expected + "; got \"" + size + "\"")
+    }
     (float(parts.at(0).trim()) * 1in, float(parts.at(1).trim()) * 1in)
   } else {
-    (48in, 36in)
+    panic(expected + "; got " + repr(size))
   }
   let (w, h) = dims
   if orientation == "landscape" and h > w { (h, w) } else if (
@@ -668,7 +681,15 @@
       heading-fonts: brand-heading-fonts,
     )
   } else { (:) }
-  let spec = theme-specs.at(theme, default: theme-specs.generic)
+  // Unknown theme names used to fall through to `generic`, so a typo printed
+  // in the wrong colours with nothing said. Same printed-once reasoning as
+  // resolve-size.
+  let spec = if theme in theme-specs { theme-specs.at(theme) } else {
+    panic(
+      "theme must be one of " + theme-specs.keys().join(", ")
+        + "; got " + repr(theme),
+    )
+  }
   let th = make-theme(..spec + brand + overrides)
 
   // One vertical rhythm for every deliberate unit of information. The theme

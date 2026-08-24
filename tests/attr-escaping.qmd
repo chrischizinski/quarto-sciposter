@@ -1,0 +1,25 @@
+---
+# Positive control for attribute escaping. Unlike the two fixtures beside it,
+# this poster must RENDER, and the characters below must survive to the PDF.
+#
+# A div attribute that becomes Typst content — a poster-box title, a takeaway
+# or stats label — used to be interpolated raw. "#" opens code, so the grant
+# number below read as a variable lookup; an unpaired "]" closed the content
+# block early; "$" opened math. Each failed the compile with an error naming
+# neither the attribute nor the div. The same text written in YAML has always
+# escaped cleanly, which is the asymmetry this fixture pins down.
+title: "Attribute escaping fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a2
+      columns: 1
+---
+
+::: {.poster-box title="Effects n=42] at $5"}
+Box body.
+:::
+
+::: {.takeaway label="Grant #DEB-1234"}
+Headline finding.
+:::
