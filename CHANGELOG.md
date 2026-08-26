@@ -8,7 +8,7 @@ The version in `_extensions/sciposter/_extension.yml` and the git tag are two
 records of the same fact — Quarto reads the file, users read the tag. Bump the
 file, commit, then tag to match.
 
-## [Unreleased]
+## [0.10.0] — 2026-08-26
 
 ### Added
 
