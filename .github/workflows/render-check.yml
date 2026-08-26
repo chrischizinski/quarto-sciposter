@@ -68,6 +68,37 @@ jobs:
             exit 1
           fi
 
+      # Two names the template cannot resolve, each of which it used to guess
+      # at in silence: an unknown paper size fell back to 48x36 and an unknown
+      # theme to `generic`, so a typo printed at the wrong size or in the wrong
+      # colours and looked deliberate. Both fixtures must fail the render.
+      - name: Check unknown size and theme names stop the render
+        run: |
+          for fixture in tests/reject-bad-size.qmd tests/reject-bad-theme.qmd; do
+            if quarto render "$fixture" --to sciposter-typst; then
+              echo "$fixture rendered; the name should have been rejected"
+              exit 1
+            fi
+            echo "$fixture rejected, as it must be"
+          done
+
+      # Div attributes reach Typst as content, so "#", "]" and "$" in a box
+      # title or a label are markup unless escaped: a grant number `#DEB-1234`
+      # read as a variable lookup and failed the compile. The same text written
+      # in YAML has always escaped, and this keeps the two routes in agreement.
+      - name: Check markup characters in div attributes survive
+        run: |
+          sudo apt-get install -y poppler-utils
+          quarto render tests/attr-escaping.qmd --to sciposter-typst
+          text=$(pdftotext tests/attr-escaping.pdf -)
+          for want in '#DEB-1234' 'n=42]' '$5'; do
+            if ! echo "$text" | grep -qF "$want"; then
+              echo "attribute text lost or mangled: $want"
+              exit 1
+            fi
+          done
+          echo "markup characters in attributes render literally"
+
       # A bottom-pinned .full-width float shortens the columns region, but the
       # body sits in a fixed-height grid row that Typst will not clip, so
       # column text that outgrows the region keeps drawing straight under the

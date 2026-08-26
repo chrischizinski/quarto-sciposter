@@ -10,7 +10,57 @@ file, commit, then tag to match.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `_extensions/sciposter/_schema.yml` and `_snippets.json`, so editors with
+  [Quarto Wizard](https://m.canouil.dev/quarto-wizard/) offer completion,
+  validation and hover docs for every `poster:` option, and snippets for the
+  front matter and each fenced-div block. Neither file changes a render —
+  Quarto ignores both — but they are what the extension listing checks for.
+  The schema mirrors the option tables in `README.md`; a new option needs a
+  row in both.
+
+### Fixed
+
+- An unknown `poster.size` no longer falls back to 48x36 in silence. `size:
+  a3` (there is no a3) and `size: "36X24"` both produced a full-size poster
+  that looked deliberate; a poster is printed once, so a name the template
+  cannot resolve now stops the render and names the sizes it does know.
+  `"36X24"` is now resolved rather than rejected — the pair is matched
+  case-insensitively.
+- An unknown `poster.theme` no longer falls back to `generic` in silence. A
+  typo printed the poster in the wrong colours with nothing said. Same
+  printed-once reasoning, same treatment as `heading-align` already had.
+- `#`, `]` and `$` in a div attribute that becomes Typst content — a
+  `.poster-box` title, a `.takeaway` / `.stats` / `.qr` label — are escaped.
+  They were interpolated raw, so a grant number `#DEB-1234` read as a variable
+  lookup and an unpaired `]` closed the content block early, each failing the
+  compile with an error naming neither the attribute nor the div. The same
+  text written in YAML has always escaped; this makes the two routes agree.
+  `*` and `_` are still live, so emphasis in a title keeps working.
+- A `.qr` div with no `url=` warns instead of rendering nothing quietly. The
+  poster still renders, so without the warning the missing code is something
+  the author finds at the venue.
+
+### Changed
+
+- Posters that relied on either silent fallback above now fail to render
+  rather than printing wrong. The error names the accepted values.
+
+
+## [0.9.0] — 2026-08-07
+
+### Added
+
+- `poster.takeaway-align` — `left` | `center` | `right` for a `.takeaway`
+  closing band, completing the set alongside `heading-align`,
+  `subheading-align` and `stats-align`. Same reason as those: alignment cannot
+  travel through `theme-overrides`, which merges dict into dict, and
+  `takeaway-text-args` is spread into `text()`, which has no alignment
+  parameter. Label and headline align together — a centred headline over a
+  left-set label reads as a mistake. Defaults to `left`, and the `left` case
+  returns the content bare rather than wrapping it in `align(left, ..)`, so
+  posters that do not ask for this render byte-identically.
 
 ## [0.8.0] — 2026-08-07
 

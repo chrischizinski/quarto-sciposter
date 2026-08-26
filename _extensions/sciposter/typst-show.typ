@@ -56,7 +56,7 @@ $endif$
 $if(poster.title-sizes-typst)$
   title-sizes: $poster.title-sizes-typst$,
 $endif$
-$-- These three are plain strings; sciposter() maps them to Typst alignments.
+$-- These four are plain strings; sciposter() maps them to Typst alignments.
 $if(poster.heading-align)$
   heading-align: "$poster.heading-align$",
 $endif$
@@ -65,6 +65,9 @@ $if(poster.subheading-align)$
 $endif$
 $if(poster.stats-align)$
   stats-align: "$poster.stats-align$",
+$endif$
+$if(poster.takeaway-align)$
+  takeaway-align: "$poster.takeaway-align$",
 $endif$
 $-- Tri-state, so it is forwarded unconditionally: `$if()$` cannot tell an
 $-- absent key from an explicit `false`, and here they mean different things —

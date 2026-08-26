@@ -256,14 +256,27 @@
   "a2": (16.54in, 23.39in),
 )
 
+// An unrecognised size used to fall back to 48x36 without a word, which meant
+// `size: a3` (there is no a3) or `size: "36X24"` (capital X) produced a
+// full-size poster that looked deliberate. A poster is printed once, so a name
+// the template does not know has to stop the render, not be guessed at. Same
+// reasoning as _h-align above.
 #let resolve-size(size, orientation) = {
-  let dims = if type(size) == str and lower(size) in named-sizes {
-    named-sizes.at(lower(size))
-  } else if type(size) == str and size.contains("x") {
-    let parts = size.split("x")
+  let name = if type(size) == str { lower(size).trim() } else { size }
+  let expected = (
+    "poster size must be \"WxH\" in inches (\"48x36\") or one of "
+      + named-sizes.keys().join(", ")
+  )
+  let dims = if type(name) == str and name in named-sizes {
+    named-sizes.at(name)
+  } else if type(name) == str and name.contains("x") {
+    let parts = name.split("x")
+    if parts.len() != 2 {
+      panic(expected + "; got \"" + size + "\"")
+    }
     (float(parts.at(0).trim()) * 1in, float(parts.at(1).trim()) * 1in)
   } else {
-    (48in, 36in)
+    panic(expected + "; got " + repr(size))
   }
   let (w, h) = dims
   if orientation == "landscape" and h > w { (h, w) } else if (
@@ -450,17 +463,25 @@
     th.at("takeaway-" + name + "-args")
       + th.at("takeaway-" + kind + "-" + name + "-args", default: (:))
   )
+  // Label and body align together: a centred headline over a left-set label
+  // reads as a mistake. As with the headings, the `left` case returns the
+  // content bare rather than wrapping it in `align(left, ..)`, so a poster
+  // that never asks for this renders byte-identically.
+  let h = th.at("takeaway-align", default: left)
   block(
     width: 100%,
     breakable: false,
     ..overlay("box"),
     {
       set par(justify: false, leading: 0.5em)
-      if label != none {
-        text(..(size: 0.9 * base) + overlay("label-text"), upper(label))
-        v(0.18in)
+      let inner = {
+        if label != none {
+          text(..(size: 0.9 * base) + overlay("label-text"), upper(label))
+          v(0.18in)
+        }
+        text(..(size: scale * base) + overlay("text"), body)
       }
-      text(..(size: scale * base) + overlay("text"), body)
+      if h == left { inner } else { align(h, inner) }
     },
   )
 }
@@ -596,7 +617,7 @@
   theme: "generic",
   theme-colors: (:),
   theme-overrides: (:),
-  // Three layout knobs that `theme-overrides` cannot carry. That route merges
+  // Four layout knobs that `theme-overrides` cannot carry. That route merges
   // a dict INTO a dict (`th.at(key) + value`), so an alignment or a bare
   // length has no way through it — and `heading-*-args` are spread into
   // `text()`, which has no alignment parameter at all. They sit here with
@@ -605,6 +626,7 @@
   heading-align: "left",
   subheading-align: "left",
   stats-align: "left",
+  takeaway-align: "left",
   title-gaps: (:),
   title-sizes: (:),
   block-gap: auto,
@@ -659,7 +681,15 @@
       heading-fonts: brand-heading-fonts,
     )
   } else { (:) }
-  let spec = theme-specs.at(theme, default: theme-specs.generic)
+  // Unknown theme names used to fall through to `generic`, so a typo printed
+  // in the wrong colours with nothing said. Same printed-once reasoning as
+  // resolve-size.
+  let spec = if theme in theme-specs { theme-specs.at(theme) } else {
+    panic(
+      "theme must be one of " + theme-specs.keys().join(", ")
+        + "; got " + repr(theme),
+    )
+  }
   let th = make-theme(..spec + brand + overrides)
 
   // One vertical rhythm for every deliberate unit of information. The theme
@@ -901,10 +931,12 @@
   // disruptive at 1m than a soft right edge.
   set par(justify: false, leading: 0.65em)
   set heading(numbering: none)
-  // Carried on the theme state because stats-grid() is a free helper with no
-  // access to these arguments. Inserted after the theme-overrides merge above
-  // so it cannot collide with a key an author named there.
+  // Carried on the theme state because stats-grid() and takeaway() are free
+  // helpers with no access to these arguments. Inserted after the
+  // theme-overrides merge above so they cannot collide with a key an author
+  // named there.
   th.insert("stats-align", _h-align(stats-align))
+  th.insert("takeaway-align", _h-align(takeaway-align))
   _theme.update(th)
 
   // Section headings: filled bars in theme colors.

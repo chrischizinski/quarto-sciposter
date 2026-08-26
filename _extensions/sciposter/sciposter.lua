@@ -54,6 +54,17 @@ local function wrap_cells(div, open)
   return blocks
 end
 
+-- Quarto's logger when the filter runs under Quarto, stderr when it runs
+-- under plain Pandoc.
+local function warn(msg)
+  local emit = quarto and quarto.log and quarto.log.warning
+  if emit then
+    emit(msg)
+  else
+    io.stderr:write(msg .. "\n")
+  end
+end
+
 -- ---------------------------------------------------------------------------
 -- YAML -> Typst values
 -- ---------------------------------------------------------------------------
@@ -115,6 +126,21 @@ local function typst_scalar(s)
     return s
   end
   return '"' .. s:gsub('\\', '\\\\'):gsub('"', '\\"') .. '"'
+end
+
+-- Attribute values that reach Typst as CONTENT (`[...]`) rather than as a
+-- string: a poster-box title, a takeaway or stats label. They are author
+-- prose, and prose on a poster routinely carries the characters Typst reads
+-- as markup — "#" opens code, so a grant number `#DEB-1234` is a variable
+-- lookup; an unpaired "]" closes the content block early; "$" opens math.
+-- Each fails the compile with an error that never names the attribute it came
+-- from. The YAML route escapes these already, by way of Pandoc's Typst
+-- writer, so escaping here is what makes the two routes agree.
+--
+-- `*` and `_` are deliberately left alone: emphasis inside a box title works
+-- today and is worth keeping.
+local function typst_content(s)
+  return (s:gsub("([\\#%[%]%$])", "\\%1"))
 end
 
 local function typst_value(value)
@@ -344,7 +370,9 @@ local function split_cells(div)
   if div.classes:includes("stats") then
     local args = {}
     if div.attributes["label"] then
-      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+      table.insert(
+        args, "label: [" .. typst_content(div.attributes["label"]) .. "]"
+      )
     end
     local open = "#stats-grid(" .. table.concat(args, ", ")
     if #args > 0 then
@@ -409,15 +437,23 @@ local function map_div(div)
     return wrap(div, "#poster-surface(" .. table.concat(args, ", ") .. ")[")
   end
 
-  -- ::: {.qr url="https://..."} — url is required; without it the div is
-  -- left alone rather than emitting a QR that encodes nothing.
+  -- ::: {.qr url="https://..."} — url is required. Without it the div is left
+  -- alone rather than emitting a QR that encodes nothing, but silence is the
+  -- wrong failure: the poster renders, prints, and is missing the code the
+  -- author put on it. Warn, then carry on.
+  if div.classes:includes("qr") and not div.attributes["url"] then
+    warn("sciposter: a .qr div has no url= attribute, so no QR code was "
+      .. "rendered. Add url=\"https://...\" to the div.")
+  end
   if div.classes:includes("qr") and div.attributes["url"] then
-    local args = { '"' .. div.attributes["url"] .. '"' }
+    local args = { typst_scalar(div.attributes["url"]) }
     if div.attributes["size"] then
       table.insert(args, "size: " .. div.attributes["size"])
     end
     if div.attributes["label"] then
-      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+      table.insert(
+        args, "label: [" .. typst_content(div.attributes["label"]) .. "]"
+      )
     end
     -- A vertical nudge for optical alignment against a neighbour; negative
     -- values move the code up. See the comment on poster-qr for why this is
@@ -434,7 +470,9 @@ local function map_div(div)
       table.insert(args, "scale: " .. div.attributes["scale"])
     end
     if div.attributes["label"] then
-      table.insert(args, "label: [" .. div.attributes["label"] .. "]")
+      table.insert(
+        args, "label: [" .. typst_content(div.attributes["label"]) .. "]"
+      )
     end
     if div.classes:includes("quiet") then
       table.insert(args, 'kind: "quiet"')
@@ -454,7 +492,7 @@ local function map_div(div)
     local args = 'kind: "' .. kind .. '"'
     local title = div.attributes["title"]
     if title then
-      args = args .. ", title: [" .. title .. "]"
+      args = args .. ", title: [" .. typst_content(title) .. "]"
     end
     return wrap(div, "#poster-box(" .. args .. ")[")
   end
@@ -464,15 +502,9 @@ local function warn_dropped_styling()
   if not dropped_styling then
     return
   end
-  local warn = quarto and quarto.log and quarto.log.warning
-  local msg = "sciposter: replaced a table's own colors, borders or spacing "
-    .. "with the poster theme. Set `table-css: size-only` under `poster:` to "
-    .. "keep the table's styling at a readable size."
-  if warn then
-    warn(msg)
-  else
-    io.stderr:write(msg .. "\n")
-  end
+  warn("sciposter: replaced a table's own colors, borders or spacing with "
+    .. "the poster theme. Set `table-css: size-only` under `poster:` to keep "
+    .. "the table's styling at a readable size.")
 end
 
 -- Meta must be read before divs are mapped; a single filter table runs

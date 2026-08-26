@@ -1,0 +1,18 @@
+---
+# Negative control for the size guard. Not an example: this poster exists to
+# FAIL the render, and it lives outside examples/ for that reason.
+#
+# `a3` is not a size the template knows — the named set is a0, a1, a2, and
+# anything else has to be a "WxH" pair in inches. It used to fall through to
+# 48x36 without a word, so a poster asked for at A3 came back full size and
+# looking deliberate. Capital "36X24" landed in the same hole. A poster is
+# printed once, so a name the template cannot resolve has to stop the render.
+title: "Size guard fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a3
+      columns: 1
+---
+
+Body.

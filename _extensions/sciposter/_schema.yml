@@ -1,0 +1,374 @@
+# Schema for the sciposter extension
+# Describes format options, div classes and div attributes for IDE tooling
+# (Quarto Wizard) and runtime validation.
+#
+# Kept in step with the option tables in README.md; every entry here has a row
+# there, and the defaults are the ones typst-template.typ actually falls back
+# to, not aspirational ones.
+
+$schema: https://m.canouil.dev/quarto-wizard/assets/schema/v2/extension-schema.json
+
+# Document-level metadata, outside the format key.
+options:
+  logos:
+    type: object
+    description: "Logos placed in the title bar, on either side of the title."
+    properties:
+      left:
+        type: array
+        description: "Image paths for the left of the title bar."
+        items:
+          type: string
+          completion:
+            type: file
+            extensions: [.svg, .png, .jpg, .jpeg, .pdf]
+      right:
+        type: array
+        description: "Image paths for the right of the title bar."
+        items:
+          type: string
+          completion:
+            type: file
+            extensions: [.svg, .png, .jpg, .jpeg, .pdf]
+
+# Options configured under format: sciposter-typst: in YAML metadata.
+formats:
+  sciposter-typst:
+    poster:
+      type: object
+      description: "Poster layout, theme and typography options."
+      properties:
+        size:
+          type: string
+          default: "48x36"
+          description: "Page size as \"WxH\" in inches (\"48x36\"), or a named size. An unknown name stops the render rather than falling back."
+          examples: ["48x36", "36x24", a0, a1, a2]
+          completion:
+            type: enum
+            values: [a0, a1, a2, "48x36", "36x24", "42x36"]
+        orientation:
+          type: string
+          description: "Flips a named size. Unset keeps the size as written."
+          enum: [portrait, landscape]
+        columns:
+          type: integer
+          default: 3
+          minimum: 1
+          description: "Body column count; 1-5 is the sensible range."
+        gutter:
+          type: string
+          default: "1in"
+          description: "Space between body columns."
+          completion:
+            type: size
+        margin:
+          type: string
+          default: "1in"
+          description: "Outer margin. The title and footer bars bleed past it, full width."
+          completion:
+            type: size
+        theme:
+          type: string
+          default: generic
+          description: "Base colour and font theme. An unknown name stops the render rather than falling back to generic."
+          enum: [generic, unl]
+        colors:
+          type: object
+          description: "Theme colour overrides. Hex, with or without the leading \"#\". Beats both the theme and _brand.yml."
+          properties:
+            primary:
+              type: string
+              description: "Title bar, level-1 heading bars, takeaway fill."
+              completion:
+                type: color
+            accent:
+              type: string
+              description: "Level-2 rules, links, box rules, footer bar."
+              completion:
+                type: color
+            bg:
+              type: string
+              description: "Page background."
+              completion:
+                type: color
+            fg:
+              type: string
+              description: "Body text."
+              completion:
+                type: color
+            on-primary:
+              type: string
+              description: "Text drawn on primary-filled surfaces; flip it for a light primary."
+              completion:
+                type: color
+            box-bg:
+              type: string
+              description: "Fill for poster boxes, surfaces, the stats strip and boxed references."
+              completion:
+                type: color
+            stripe:
+              type: string
+              description: "The rule under the title bar. Defaults to accent."
+              completion:
+                type: color
+        fonts:
+          type: array
+          description: "Body font stack, first available wins."
+          items:
+            type: string
+        heading-fonts:
+          type: array
+          description: "Font stack for the title, headings and takeaway. Defaults to the body stack."
+          items:
+            type: string
+        code-fonts:
+          type: array
+          description: "Font stack for code. Unset leaves Typst's own mono face."
+          items:
+            type: string
+        code-font-size:
+          type: string
+          description: "Size for code. 0.75-0.85 of body size is usual on a large poster."
+          examples: [20pt, 0.8em]
+          completion:
+            type: size
+        code-ligatures:
+          type: boolean
+          description: "Set false to turn off a coding font's ligatures. Unset leaves the font's own setting alone."
+        theme-overrides:
+          type: object
+          description: "Per-element style overrides, keyed by theme element (heading-box-args, takeaway-text-args, ...). Each value is a map of Typst properties."
+          additionalProperties: true
+        block-gap:
+          type: string
+          description: "One vertical gap above and below every styled block, replacing the per-element defaults."
+          completion:
+            type: size
+        heading-align:
+          type: string
+          default: left
+          description: "Horizontal alignment of level-1 section bars."
+          enum: [left, center, right]
+        subheading-align:
+          type: string
+          default: left
+          description: "Horizontal alignment of level-2 subheadings."
+          enum: [left, center, right]
+        stats-align:
+          type: string
+          default: left
+          description: "Horizontal alignment of the cells in an evidence strip."
+          enum: [left, center, right]
+        takeaway-align:
+          type: string
+          default: left
+          description: "Horizontal alignment of a .takeaway band."
+          enum: [left, center, right]
+        title-gaps:
+          type: object
+          description: "The three vertical gaps down the title bar. Naming one leaves the others at their defaults."
+          properties:
+            subtitle:
+              type: string
+              default: "0.2in"
+              description: "Gap above the subtitle."
+              completion:
+                type: size
+            author:
+              type: string
+              default: "0.35in"
+              description: "Gap above the author line."
+              completion:
+                type: size
+            affiliation:
+              type: string
+              default: "0.18in"
+              description: "Gap above the affiliations."
+              completion:
+                type: size
+        title-sizes:
+          type: object
+          description: "The three type sizes under the title. Default to ratios of the title and body sizes; set one to pin it absolutely."
+          properties:
+            subtitle:
+              type: string
+              description: "Subtitle size. Defaults to 0.58 of the title size."
+              completion:
+                type: size
+            author:
+              type: string
+              description: "Author line size. Defaults to 1.25 of the body size."
+              completion:
+                type: size
+            affiliation:
+              type: string
+              description: "Affiliation size. Defaults to 0.95 of the body size."
+              completion:
+                type: size
+        brand:
+          type: boolean
+          default: true
+          description: "Set false to ignore the project's _brand.yml and pin the theme as authored."
+        logo-height:
+          type: string
+          default: "1.5in"
+          description: "Height of every title-bar logo."
+          completion:
+            type: size
+        footer:
+          type: [string, object]
+          description: "Footer bar text: a string (centered), or a map with left, center and right keys."
+          examples: ["Example Conference 2026 - Lincoln, NE"]
+        refs:
+          type: string
+          default: flow
+          description: "How the bibliography renders: in the column flow, in a tinted box, or suppressed."
+          enum: [flow, box, none]
+        fig-max-height:
+          type: string
+          default: "45%"
+          description: "Height cap for auto-sized figures, as a fraction of the column height."
+          completion:
+            type: size
+        base-font-size:
+          type: string
+          description: "Body text size. Derived from the poster width when unset."
+          examples: [27pt, 33pt]
+          completion:
+            type: size
+        title-font-size:
+          type: string
+          description: "Poster title size. 2.3 times the body size when unset."
+          completion:
+            type: size
+        palette:
+          type: array
+          description: "Figure colours, shared with R and Python chunks. Defaults to the theme's Okabe-Ito ordering."
+          items:
+            type: string
+            completion:
+              type: color
+        table-css:
+          type: string
+          default: theme
+          description: "How much of an HTML table's own CSS to drop: theme (type, colour, rules, spacing), size-only (just the font size), or keep (nothing)."
+          enum: [theme, size-only, keep]
+        draft:
+          type: boolean
+          default: false
+          description: "Overlay a diagnostics panel reporting type sizes, reading distances and characters per line."
+        credit:
+          type: [boolean, string]
+          default: false
+          description: "Print a muted \"Built with quarto-sciposter\" line in a bottom corner. true uses the bottom right."
+          enum: [true, false, bottom-left, bottom-right]
+
+classes:
+  full-width:
+    description: "Span every column. Floats to the top or bottom page edge (a Typst constraint on parent-scoped floats)."
+  col-break:
+    description: "Force a column break at this point. Used empty."
+  poster-box:
+    description: "A framed box with an optional title. Add .highlight or .alert for the variants."
+  highlight:
+    description: "Poster box variant, on the box's own surface."
+  alert:
+    description: "Poster box variant, tinted and ruled in the primary colour."
+  takeaway:
+    description: "A headline finding, sized to read from across the aisle. Add .quiet for the warm-surface variant."
+  quiet:
+    description: "Takeaway variant: same type scale, inverted surface, for a closing band that must not add a second full-strength primary panel."
+  stats:
+    description: "Evidence strip: one paragraph per cell, each written as **value** label."
+  poster-grid:
+    description: "Aligned cells instead of column flow, one cell per top-level block. The way to line a box in one column up with a step in the next."
+  poster-surface:
+    description: "A tinted container for grouping related content."
+  poster-image-frame:
+    description: "The same container with a rule and a mat, which is what keeps a dark image from printing as a muddy block."
+  qr:
+    description: "A scannable QR code. The url attribute is required."
+
+attributes:
+  full-width:
+    position:
+      type: string
+      description: "Which page edge the float pins to. Unset lets Typst pick the nearer one."
+      enum: [top, bottom]
+  poster-box:
+    title:
+      type: string
+      description: "Box title, set in the accent colour above the content."
+  takeaway:
+    label:
+      type: string
+      description: "Small tracked label above the headline (\"Key finding\")."
+    scale:
+      type: number
+      description: "Multiplier on the headline type size."
+      examples: [1.4, 2.2]
+  stats:
+    label:
+      type: string
+      description: "Small tracked label above the strip (\"At a glance\")."
+  poster-grid:
+    cols:
+      type: integer
+      description: "Number of grid columns. Defaults to the cell count."
+    widths:
+      type: string
+      description: "Comma-separated track sizes, as fractions or lengths."
+      examples: ["2fr,1fr", "60%,40%"]
+    gutter:
+      type: string
+      description: "Horizontal space between cells."
+      completion:
+        type: size
+    row-gutter:
+      type: string
+      description: "Vertical space between rows."
+      completion:
+        type: size
+  poster-surface:
+    tint:
+      type: string
+      description: "Surface fill. Unset keeps the theme's."
+      completion:
+        type: color
+    ink:
+      type: string
+      description: "Text colour inside the surface. Needed when tint is dark, since markdown has no other way to reach it."
+      completion:
+        type: color
+    pad:
+      type: string
+      description: "Inset between the surface edge and its content."
+      completion:
+        type: size
+    radius:
+      type: string
+      description: "Corner radius."
+      completion:
+        type: size
+    border:
+      type: string
+      description: "A bare colour draws a rule at the theme's weight; anything else is passed to Typst as written."
+  qr:
+    url:
+      type: string
+      required: true
+      description: "The URL the code encodes. Without it nothing is rendered and the filter warns."
+    size:
+      type: string
+      description: "Side length of the code."
+      examples: [2in]
+      completion:
+        type: size
+    label:
+      type: string
+      description: "Caption printed under the code."
+    offset:
+      type: string
+      description: "Vertical nudge for optical alignment against a neighbour; negative moves the code up."
+      completion:
+        type: size
