@@ -8,6 +8,20 @@ The version in `_extensions/sciposter/_extension.yml` and the git tag are two
 records of the same fact — Quarto reads the file, users read the tag. Bump the
 file, commit, then tag to match.
 
+## [0.10.1] — 2026-08-26
+
+### Added
+
+- An MIT `LICENSE` file, and a License section in `README.md` pointing at it.
+  The repository carried no license until now, which GitHub reports as
+  "unlicensed" and which the [quarto-web extension
+  listing](https://github.com/quarto-dev/quarto-web/tree/main/docs/extensions/listings)
+  treats as disqualifying — it requires a clearly indicated open-source
+  license before an extension can be added to `custom-formats.yml`.
+
+  Released on its own so the release archive carries the license: v0.10.0 was
+  cut one commit before the file landed.
+
 ## [0.10.0] — 2026-08-26
 
 ### Added
