@@ -10,6 +10,16 @@ file, commit, then tag to match.
 
 ## [Unreleased]
 
+### Added
+
+- `_extensions/sciposter/_schema.yml` and `_snippets.json`, so editors with
+  [Quarto Wizard](https://m.canouil.dev/quarto-wizard/) offer completion,
+  validation and hover docs for every `poster:` option, and snippets for the
+  front matter and each fenced-div block. Neither file changes a render —
+  Quarto ignores both — but they are what the extension listing checks for.
+  The schema mirrors the option tables in `README.md`; a new option needs a
+  row in both.
+
 ### Fixed
 
 - An unknown `poster.size` no longer falls back to 48x36 in silence. `size:

@@ -1,0 +1,183 @@
+{
+	"Poster front matter": {
+		"prefix": "poster",
+		"body": [
+			"---",
+			"title: \"${1:Poster Title}\"",
+			"subtitle: \"${2:Subtitle}\"",
+			"author:",
+			"  - name: ${3:Author Name}",
+			"    affiliations:",
+			"      - name: ${4:Institution}",
+			"format:",
+			"  sciposter-typst:",
+			"    poster:",
+			"      size: \"${5|48x36,36x24,a0,a1,a2|}\"",
+			"      columns: ${6:3}",
+			"      theme: ${7|generic,unl|}",
+			"      footer: \"${8:Conference 2026 - City, ST - you@example.edu}\"",
+			"---",
+			"$0"
+		],
+		"description": "Poster document front matter: title, authors, size, columns, theme and footer."
+	},
+	"Poster front matter with logos": {
+		"prefix": "poster-logos",
+		"body": [
+			"---",
+			"title: \"${1:Poster Title}\"",
+			"author:",
+			"  - name: ${2:Author Name}",
+			"    affiliations:",
+			"      - name: ${3:Institution}",
+			"format:",
+			"  sciposter-typst:",
+			"    poster:",
+			"      size: \"${4|48x36,36x24,a0,a1,a2|}\"",
+			"      columns: ${5:3}",
+			"      theme: ${6|generic,unl|}",
+			"logos:",
+			"  left:",
+			"    - ${7:logos/left-logo.svg}",
+			"  right:",
+			"    - ${8:logos/right-logo.svg}",
+			"---",
+			"$0"
+		],
+		"description": "Poster front matter with title-bar logos on both sides."
+	},
+	"Poster theme colours": {
+		"prefix": "poster-colors",
+		"body": [
+			"colors:",
+			"  primary: \"${1:#7A1FA2}\"",
+			"  accent: \"${2:#B07D2B}\"",
+			"$0"
+		],
+		"description": "Theme colour overrides under poster:. Beats both the theme and _brand.yml."
+	},
+	"Takeaway band": {
+		"prefix": "takeaway",
+		"body": [
+			"::: {.takeaway label=\"${1:Key finding}\"}",
+			"${2:The one sentence a reader should leave with.}",
+			":::",
+			"$0"
+		],
+		"description": "Headline finding, sized to read from across the aisle."
+	},
+	"Takeaway band (quiet)": {
+		"prefix": "takeaway-quiet",
+		"body": [
+			"::: {.takeaway .quiet label=\"${1:In short}\" scale=\"${2:1.4}\"}",
+			"${3:A closing line that reads as an endpoint.}",
+			":::",
+			"$0"
+		],
+		"description": "Takeaway on the warm surface, for a closing band."
+	},
+	"Stats strip": {
+		"prefix": "stats",
+		"body": [
+			"::: {.stats label=\"${1:At a glance}\"}",
+			"**${2:3}** ${3:sites}",
+			"",
+			"**${4:1,240}** ${5:observations}",
+			"",
+			"**${6:12}** ${7:months}",
+			":::",
+			"$0"
+		],
+		"description": "Evidence strip: one paragraph per cell, each **value** label."
+	},
+	"Poster box": {
+		"prefix": "poster-box",
+		"body": [
+			"::: {.poster-box title=\"${1:Title}\"}",
+			"${2:Content.}",
+			":::",
+			"$0"
+		],
+		"description": "Framed box with an optional title."
+	},
+	"Poster box (highlight)": {
+		"prefix": "poster-box-highlight",
+		"body": [
+			"::: {.poster-box .highlight title=\"${1:Title}\"}",
+			"${2:Content.}",
+			":::",
+			"$0"
+		],
+		"description": "Poster box, highlight variant."
+	},
+	"Poster box (alert)": {
+		"prefix": "poster-box-alert",
+		"body": [
+			"::: {.alert title=\"${1:Take-home message}\"}",
+			"${2:Content.}",
+			":::",
+			"$0"
+		],
+		"description": "Poster box, alert variant: tinted and ruled in the primary colour."
+	},
+	"Full-width block": {
+		"prefix": "full-width",
+		"body": [
+			"::: {.full-width position=\"${1|bottom,top|}\"}",
+			"${2:![Caption](figure.svg)}",
+			":::",
+			"$0"
+		],
+		"description": "Span every column, pinned to one page edge."
+	},
+	"Column break": {
+		"prefix": "col-break",
+		"body": [
+			"::: {.col-break}",
+			":::",
+			"$0"
+		],
+		"description": "Force a column break."
+	},
+	"Poster grid": {
+		"prefix": "poster-grid",
+		"body": [
+			"::: {.poster-grid cols=\"${1:2}\" widths=\"${2:2fr,1fr}\" gutter=\"${3:0.5in}\"}",
+			"${4:First cell.}",
+			"",
+			"${5:Second cell.}",
+			":::",
+			"$0"
+		],
+		"description": "Aligned cells instead of column flow, one cell per top-level block."
+	},
+	"Poster surface": {
+		"prefix": "poster-surface",
+		"body": [
+			"::: {.poster-surface}",
+			"${1:Grouped content.}",
+			":::",
+			"$0"
+		],
+		"description": "Tinted container for grouping related content."
+	},
+	"Poster image frame": {
+		"prefix": "poster-image-frame",
+		"body": [
+			"::: {.poster-image-frame}",
+			"![${1:Caption}](${2:image.png})",
+			":::",
+			"$0"
+		],
+		"description": "Surface with a rule and a mat, for images that would otherwise print as a muddy block."
+	},
+	"QR code": {
+		"prefix": "qr",
+		"body": [
+			"::: {.qr url=\"${1:https://example.org}\" size=\"${2:2in}\" label=\"${3:Read the preprint}\"}",
+			":::",
+			"$0"
+		],
+		"description": "Scannable QR code; url is required."
+	}
+}
