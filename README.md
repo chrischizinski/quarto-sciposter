@@ -753,3 +753,7 @@ Two things can go wrong, and the banner names which:
 ## Changelog
 
 See [`CHANGELOG.md`](CHANGELOG.md).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
