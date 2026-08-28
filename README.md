@@ -1,5 +1,7 @@
 # quarto-sciposter
 
+<img src="logo.png" alt="quarto-sciposter hex logo" align="right" width="140">
+
 Flexible scientific conference posters from plain Quarto markdown, rendered
 with [Typst](https://typst.app) (bundled with Quarto ≥ 1.4 — no LaTeX
 needed). Any poster size, 1–5 columns, any number of logos, optional
