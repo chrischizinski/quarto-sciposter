@@ -20,3 +20,8 @@
 # ships the extension itself; real posters live here only while being worked on.
 /tidycreel-afs-2026.qmd
 /assets/
+
+# Source art for logo.png — a 2 MB JPEG on a white ground. The shipped mark
+# is the cut-out PNG, which is what every use of it needs; this is kept
+# locally in case the silhouette has to be recut.
+/quarto_sciposter.jpeg
