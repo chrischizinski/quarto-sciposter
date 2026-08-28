@@ -1,0 +1,34 @@
+---
+# Positive control for the watermark. A phrase, not a single word, because the
+# single-word case is the one that works by accident.
+#
+# Two failures this catches. `place` hands the text the whole page to lay out
+# in, so anything with a space in it wrapped to two stacked lines set at the
+# size computed for one — the box around it at its measured width is what
+# stops that. And the fit is on the ROTATED bounding box: fitting the
+# unrotated width instead ran the word off both corners, because a line set at
+# angle t is w*cos(t) + h*sin(t) across and the second term is not small when
+# the letters are a foot tall.
+#
+# CI can only prove the watermark is THERE. Rotated text comes back out of
+# pdftotext as loose glyphs in scrambled order, and poppler clamps every
+# reported bounding box to the page — an out-of-bounds check on the broken
+# fit returned zero, so there is no cheap assertion that the word stays on
+# the paper or stays on one line. Both were checked by looking at the render
+# and are not guarded here; a change to the fit needs the same eyeball.
+title: "Watermark fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: "48x36"
+      columns: 2
+      watermark: "DO NOT CIRCULATE"
+---
+
+# Introduction
+
+Body text, so the columns have something to flow.
+
+# Methods
+
+More body text.

@@ -74,7 +74,7 @@ jobs:
       # colours and looked deliberate. Both fixtures must fail the render.
       - name: Check unknown size and theme names stop the render
         run: |
-          for fixture in tests/reject-bad-size.qmd tests/reject-bad-theme.qmd; do
+          for fixture in tests/reject-bad-size.qmd tests/reject-bad-theme.qmd tests/reject-bad-handout.qmd; do
             if quarto render "$fixture" --to sciposter-typst; then
               echo "$fixture rendered; the name should have been rejected"
               exit 1
@@ -163,6 +163,56 @@ jobs:
             exit 1
           fi
           echo "template.pdf carries a bottom float and does not warn"
+
+      # A landscape poster asked for on letter paper must come back as one
+      # landscape letter page. The sheet is stored portrait and flipped to the
+      # poster's orientation, and the scaled poster is `place`d rather than
+      # flowed — without either, this fixture comes back portrait, or as three
+      # pages of slices.
+      - name: Check the handout imposes on one sheet
+        run: |
+          quarto render tests/handout.qmd --to sciposter-typst
+          pdfinfo tests/handout.pdf | grep -q "792 x 612" \
+            || { echo "handout.pdf is not landscape letter"; exit 1; }
+          pages=$(pdfinfo tests/handout.pdf | awk '/^Pages:/ {print $2}')
+          [ "$pages" = "1" ] || { echo "handout.pdf came back as $pages pages"; exit 1; }
+          if pdftotext tests/handout.pdf - | grep -q 'OVERFLOW'; then
+            echo "handout.pdf warns about overflow but fits"
+            exit 1
+          fi
+          echo "handout imposed on one landscape letter page"
+
+      # Rotated text comes out of pdftotext as loose glyphs in scrambled
+      # order, so `-raw` with the whitespace stripped is the only form the
+      # phrase survives in. That proves the watermark rendered and stayed one
+      # run; it does NOT prove it fits the page or stayed on one line —
+      # poppler clamps every bounding box it reports to the page, so an
+      # out-of-bounds check passes on a watermark that plainly runs off both
+      # corners. That part is eyeballed, not guarded.
+      #
+      # The off fixture is the half that can only break silently: `watermark:
+      # false` arrives as the string "false", and every other string is
+      # stamped as written.
+      - name: Check the watermark stamps, and stays off when told
+        run: |
+          quarto render tests/watermark.qmd --to sciposter-typst
+          quarto render tests/watermark-off.qmd --to sciposter-typst
+          if ! pdftotext -raw tests/watermark.pdf - | tr -d '[:space:]' \
+              | grep -q 'DONOTCIRCULATE'; then
+            echo "watermark did not render"
+            exit 1
+          fi
+          if pdftotext -raw tests/watermark-off.pdf - | grep -qi 'false'; then
+            echo "watermark: false stamped the word FALSE"
+            exit 1
+          fi
+          pages=$(pdfinfo tests/watermark.pdf | awk '/^Pages:/ {print $2}')
+          [ "$pages" = "1" ] || { echo "watermark.pdf came back as $pages pages"; exit 1; }
+          if pdftotext tests/watermark.pdf - | grep -q 'OVERFLOW'; then
+            echo "watermark.pdf warns about overflow but fits"
+            exit 1
+          fi
+          echo "watermark stamps, and stays off when told"
 
       - name: Check page dimensions
         run: |

@@ -108,6 +108,19 @@ $endif$
 $if(poster.palette)$
   palette: ($for(poster.palette)$"$it$", $endfor$),
 $endif$
+$-- Interpolated rather than tested with `$if()$`: `true` and a paper name
+$-- both have to reach the template as strings, and `$if()$` cannot tell
+$-- `handout: false` from an absent key. resolve-handout maps "false"/"none"
+$-- to no handout.
+$if(poster.handout)$
+  handout: "$poster.handout$",
+$endif$
+$-- Interpolated, not tested with `$if()$`: `true` and a phrase both have to
+$-- arrive as strings, and `$if()$` cannot tell `watermark: false` from an
+$-- absent key. sciposter() maps "true" to DRAFT and "false"/"none" to off.
+$if(poster.watermark)$
+  watermark: "$poster.watermark$",
+$endif$
 $if(poster.draft)$
   draft: true,
 $endif$

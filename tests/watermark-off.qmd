@@ -1,0 +1,20 @@
+---
+# Negative control for the watermark switch. `watermark: false` reaches the
+# template as the STRING "false", because the Pandoc template interpolates it
+# rather than testing it with `$if()$` — which is the only way to tell an
+# explicit `false` from an absent key.
+#
+# Every other string is stamped as written, deliberately, so the one thing
+# standing between `watermark: false` and the word FALSE across the poster is
+# the off-switch list in sciposter(). Nothing else in the suite would notice
+# if it were dropped.
+title: "Watermark off fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a1
+      columns: 1
+      watermark: false
+---
+
+Body.

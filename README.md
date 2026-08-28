@@ -87,6 +87,8 @@ logos:
 | `title-font-size` | auto | Poster title size; `2.3 ×` body size if unset |
 | `palette` | theme default | Figure colors, shared with R chunks (see Figure colors) |
 | `table-css` | `theme` | How much CSS to drop from HTML tables: `theme`, `size-only`, `keep` (see Tables) |
+| `handout` | `false` | Scale the whole poster onto handout paper (see Handouts) |
+| `watermark` | `false` | Stamp a diagonal watermark; `true` means DRAFT (see Watermark) |
 | `draft` | `false` | Overlay a diagnostics panel on the render (see Draft mode) |
 | `credit` | `false` | Print a "Built with quarto-sciposter" line (see Credit line) |
 
@@ -210,7 +212,6 @@ against 10 pt book type at 40 cm):
 
 | Poster | Derived body size |
 |---|---|
-| a3 | 14 pt |
 | a2 | 20 pt |
 | a1 | 27 pt |
 | a0 | 33 pt |
@@ -219,8 +220,10 @@ against 10 pt book type at 40 cm):
 Named A-series sizes come from
 [peace-of-posters](https://jonaspleyer.github.io/peace-of-posters/), whose
 tables are tuned against real printed posters. Custom sizes use a linear fit
-through those values, capped — a reader stands about the same distance from
-any wall-sized poster, so type size stops growing once the poster is large.
+through those values plus their a3 row, capped — a reader stands about the
+same distance from any wall-sized poster, so type size stops growing once the
+poster is large. `a3` is a fit anchor only: it is not a `size` the template
+accepts, and asking for it stops the render.
 
 Setting `base-font-size` explicitly always wins. Headings, captions,
 references and the title are all multiples of it, so one value moves the whole
@@ -578,6 +581,96 @@ Because figures are scaled to their column, a physically larger figure prints
 more than a bare matplotlib figure asking for the same nominal size.
 
 See `examples/python.qmd`.
+
+## Handouts
+
+```yaml
+poster:
+  handout: letter         # or: true / a4 / legal / tabloid / a3 / a5 / "11x8.5"
+```
+
+Lays the poster out at its full size exactly as always, then scales the
+finished sheet onto handout paper — the take-one pile beside the board. The
+sheet follows the poster's orientation, so a 48x36 landscape poster comes back
+as landscape letter rather than centred on a portrait page with 40% of the
+paper unused. `true` means `letter`. An unknown name stops the render, the
+same as an unknown `size`.
+
+This is imposition, not a small poster. The handout is a picture of the board,
+which is what makes it recognisable to someone who just walked away from it,
+and nothing reflows into a layout nobody has proofed. The type lands wherever
+the ratio puts it: 48x36 onto letter is a scale of 0.23, so the 36pt body
+prints at about 8.3pt and the title at 19pt. `draft: true` reports the sheet
+and the resulting body size, and flags it red under 7pt.
+
+Setting `size: "11x8.5"` instead is the trap this replaces. That renders a
+genuinely letter-sized poster: the base size floor puts 14pt body in 3in
+columns, roughly 36 characters to the line, and the content that fitted at A0
+runs off the page.
+
+One render produces one PDF, so a poster and its handout are two renders. A
+Quarto profile is the way to get both from one source — `-M poster.handout:...`
+does **not** work, because `poster` sits under the format key and `-M` sets
+document metadata:
+
+```yaml
+# _quarto-handout.yml
+format:
+  sciposter-typst:
+    poster:
+      handout: letter
+```
+
+```bash
+quarto render poster.qmd
+quarto render poster.qmd --profile handout -o handout.pdf
+```
+
+Raster figures downscale cleanly; anything already low-DPI on the poster stays
+low-DPI on the handout. Vector figures and the type are unaffected.
+
+## Watermark
+
+```yaml
+poster:
+  watermark: true                  # DRAFT
+  watermark: "DO NOT CIRCULATE"    # or any phrase
+```
+
+Stamps one line diagonally across the poster, corner to corner, at whatever
+size makes the rotated word fill 90% of the page — so it is proportionate on
+an A2 and on a 48x36 alike, and a long phrase is bounded the same way a short
+one is. Very transparent rather than a light tint: a tint mixed to read
+correctly on the poster background disappears where the word crosses the title
+bar.
+
+It is drawn in the page foreground, over the content, because a watermark a
+figure can be laid on top of is one that can be missed. Set on top of the
+handout too, and scaled with it.
+
+`false`, `none` and an absent key all mean no watermark. Every other string is
+stamped as written, so nothing here stops the render — which is why the
+off-switches are spelled out rather than inferred.
+
+Independent of `draft`, which only overlays the diagnostics panel. Ask for
+both when proofing:
+
+```yaml
+poster:
+  watermark: true
+  draft: true
+```
+
+Color, weight, face and an explicit size go through
+`theme-overrides.watermark-text-args`, like any other element:
+
+```yaml
+poster:
+  theme-overrides:
+    watermark-text-args:
+      fill: "#c0000030"    # 8-digit hex: last pair is alpha
+      size: 400pt          # an explicit size skips the fit entirely
+```
 
 ## Draft mode
 

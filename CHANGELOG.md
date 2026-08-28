@@ -8,6 +8,54 @@ The version in `_extensions/sciposter/_extension.yml` and the git tag are two
 records of the same fact — Quarto reads the file, users read the tag. Bump the
 file, commit, then tag to match.
 
+## [Unreleased]
+
+### Added
+
+- `poster.handout`, which scales the whole poster onto handout paper for the
+  take-one pile beside the board. `true` means letter; `letter`, `legal`,
+  `tabloid`, `a5`, `a4`, `a3` or a `"WxH"` pair in inches pick another, and
+  the sheet is flipped to the poster's own orientation — a 48x36 landscape
+  poster on portrait letter wastes 40% of the paper. An unknown name stops
+  the render, the same as an unknown `size`.
+
+  It is imposition, not a small poster: the layout is done at full size and
+  the finished sheet is scaled, so the handout is a picture of the board and
+  nothing reflows into a layout nobody proofed. Rendering with `size:
+  "11x8.5"` instead was the trap — the base-size floor puts 14pt body in 3in
+  columns and the content that fitted at A0 runs off the page. `draft: true`
+  now reports the sheet and the resulting body size, in red under 7pt.
+
+  A poster and its handout are two renders; `README.md` carries the Quarto
+  profile that gets both from one source, and notes that `-M
+  poster.handout:...` does not work because `poster` sits under the format
+  key.
+
+- `poster.watermark`, which stamps one line diagonally across the poster.
+  `true` stamps DRAFT, any other string stamps itself, and `false` / `none` /
+  an absent key mean no watermark. Sized so the ROTATED word fills 90% of the
+  page rather than a fixed fraction of the width — a word set at angle t is
+  `w*cos(t) + h*sin(t)` across, and fitting the unrotated width ran DRAFT off
+  both corners. Boxed at its measured width so a phrase does not wrap.
+
+  Drawn in the page foreground, over the content and over the handout, and
+  very transparent rather than a light tint, which would vanish where the
+  word crosses the title bar. Style goes through the new
+  `watermark-text-args` theme element.
+
+  Deliberately separate from `poster.draft`: that stays diagnostics-only, so
+  no poster already using it gains a watermark.
+
+### Fixed
+
+- Dropped the unreachable `"a3": 14pt` row from `named-body-sizes`.
+  `resolve-size` panics on `size: a3` before `auto-base-size` is ever called,
+  so the entry read as a size the template supported and was not one — the
+  same gap the README's typography table showed, which listed a3 as a poster
+  size beside a2/a1/a0. Both now name it for what it is: the low anchor of
+  the linear fit custom sizes use, not a size that renders. No output
+  changes.
+
 ## [0.10.1] — 2026-08-26
 
 ### Added

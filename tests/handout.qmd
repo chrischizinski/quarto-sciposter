@@ -1,0 +1,27 @@
+---
+# Positive control for the handout imposition. A landscape poster asked for on
+# letter paper must come back as ONE landscape letter page, not portrait and
+# not two pages.
+#
+# Both halves have failed in development. The sheet is stored portrait, so
+# without the orientation flip a 48x36 poster centres on 8.5x11 and throws
+# away 40% of the paper. And the scaled poster is a page-height block on a
+# smaller page: laid out in the flow rather than placed, Typst breaks it and
+# the handout arrives as three pages of slices.
+title: "Handout fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: "48x36"
+      columns: 2
+      handout: letter
+---
+
+# Introduction
+
+Body text, so the columns have something to flow and the overflow marker has
+somewhere to land.
+
+# Methods
+
+More body text.
