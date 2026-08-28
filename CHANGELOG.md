@@ -8,7 +8,7 @@ The version in `_extensions/sciposter/_extension.yml` and the git tag are two
 records of the same fact — Quarto reads the file, users read the tag. Bump the
 file, commit, then tag to match.
 
-## [Unreleased]
+## [0.11.0] — 2026-08-28
 
 ### Added
 
@@ -434,7 +434,8 @@ Under the Jupyter engine, per-chunk `fig-width` is ignored while the
 document-level option works, and `poster.palette` must be read out of the front
 matter — there is no `rmarkdown::metadata` equivalent. See `examples/python.qmd`.
 
-[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/chrischizinski/quarto-sciposter/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.11.0
 [0.7.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.7.0
 [0.6.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.6.0
 [0.5.0]: https://github.com/chrischizinski/quarto-sciposter/releases/tag/v0.5.0
