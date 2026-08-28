@@ -1,0 +1,18 @@
+---
+# Negative control for the handout guard, and a sibling of reject-bad-size.
+# `a-4` is a plausible typo for `a4` and names no paper the template knows.
+#
+# Silently ignoring it is the specific failure worth stopping: the render
+# would succeed and hand back a full-size poster, which is exactly what the
+# author sees when the option is spelled correctly but not supported — so the
+# one way to tell "no handout" from "handout ignored" is that this fails.
+title: "Handout guard fixture"
+format:
+  sciposter-typst:
+    poster:
+      size: a1
+      columns: 1
+      handout: a-4
+---
+
+Body.

@@ -253,6 +253,19 @@ formats:
           default: theme
           description: "How much of an HTML table's own CSS to drop: theme (type, colour, rules, spacing), size-only (just the font size), or keep (nothing)."
           enum: [theme, size-only, keep]
+        handout:
+          type: [boolean, string]
+          default: false
+          description: "Scale the whole poster onto handout paper instead of printing it full size. true means letter; a paper name or \"WxH\" in inches picks another. The sheet follows the poster's orientation. An unknown name stops the render."
+          examples: [true, letter, a4, "11x8.5"]
+          completion:
+            type: enum
+            values: [letter, legal, tabloid, a5, a4, a3]
+        watermark:
+          type: [boolean, string]
+          default: false
+          description: "Stamp a large diagonal watermark across the poster. true stamps DRAFT; any other string stamps itself. Independent of draft, which only overlays the diagnostics panel."
+          examples: [true, DRAFT, "DO NOT CIRCULATE", CONFIDENTIAL]
         draft:
           type: boolean
           default: false

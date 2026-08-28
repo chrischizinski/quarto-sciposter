@@ -180,6 +180,16 @@
     // compete with it at reading distance. Sized off the body rather than
     // fixed, so it stays proportionally small on an A0 as on an A4.
     credit-text-args: body-font + (fill: fg.lighten(45%)),
+
+    // Loud in shape, quiet in ink. A watermark has to survive being
+    // photographed off a screen and still not compete with the poster it is
+    // stamped on, so it is drawn very large and very transparent rather than
+    // small and solid. Transparency and not a light tint: a tint that reads
+    // correctly on `bg` disappears on the title bar the word crosses.
+    watermark-text-args: head-font + (
+      fill: fg.transparentize(88%),
+      weight: "bold",
+    ),
   )
 }
 
@@ -285,6 +295,61 @@
 }
 
 // ---------------------------------------------------------------------------
+// Handout imposition
+// ---------------------------------------------------------------------------
+
+// Paper the poster gets scaled onto for the take-one pile beside the board.
+// Stored portrait, like named-sizes, and flipped to the poster's own
+// orientation in resolve-handout: a landscape poster centred on portrait
+// letter throws away more than half the sheet, which is the whole budget the
+// handout has.
+#let handout-sizes = (
+  "letter": (8.5in, 11in),
+  "legal": (8.5in, 14in),
+  "tabloid": (11in, 17in),
+  "a5": (5.83in, 8.27in),
+  "a4": (8.27in, 11.69in),
+  "a3": (11.69in, 16.54in),
+)
+
+// Returns the sheet to impose on, or `none` for "no handout, print the
+// poster". An unrecognised name panics for the same reason resolve-size does:
+// silently falling back would hand back a poster-sized PDF that looks like
+// the handout option simply did nothing.
+#let resolve-handout(handout, page-w, page-h) = {
+  if handout in (none, false, "", "false", "none") {
+    return none
+  }
+  let name = if handout == true or handout == "true" {
+    "letter"
+  } else if type(handout) == str {
+    lower(handout).trim()
+  } else {
+    handout
+  }
+  let expected = (
+    "poster handout must be true, \"WxH\" in inches (\"11x8.5\") or one of "
+      + handout-sizes.keys().join(", ")
+  )
+  let dims = if type(name) == str and name in handout-sizes {
+    handout-sizes.at(name)
+  } else if type(name) == str and name.contains("x") {
+    let parts = name.split("x")
+    if parts.len() != 2 {
+      panic(expected + "; got \"" + name + "\"")
+    }
+    (float(parts.at(0).trim()) * 1in, float(parts.at(1).trim()) * 1in)
+  } else {
+    panic(expected + "; got " + repr(handout))
+  }
+  // The sheet follows the poster, not the other way round — including for a
+  // custom "WxH", where guessing the author meant the other way round costs
+  // nothing and reading it literally can halve the handout.
+  let (w, h) = dims
+  if (page-w > page-h) == (w > h) { (w, h) } else { (h, w) }
+}
+
+// ---------------------------------------------------------------------------
 // Typography sizing
 // ---------------------------------------------------------------------------
 
@@ -296,15 +361,21 @@
 // posters are read by people who have been standing for hours, so erring
 // large costs nothing. Two independent derivations agree on the *ratios*
 // between tiers, which is why only the base is table-driven.
+//
+// Only the names resolve-size accepts. `a3` was in here too, at 14pt, and was
+// unreachable: resolve-size panics on `size: a3` before auto-base-size is
+// ever called, so the entry read as a size the template supported and was
+// not one. It survives as the low anchor of the fit below, which is the only
+// job it was doing.
 #let named-body-sizes = (
   "a0": 33pt,
   "a1": 27pt,
   "a2": 20pt,
-  "a3": 14pt,
 )
 
-// Custom sizes use a linear fit through those values, pt = 4.9 + 0.88 x
-// width_in, clamped hard. The fit is only calibrated over a3-a0, and reading
+// Custom sizes use a linear fit through those values plus peace-of-posters'
+// a3 row (11.69in wide, 14pt), pt = 4.9 + 0.88 x width_in, clamped hard. The
+// fit is only calibrated over a3-a0, and reading
 // distance stops growing once a poster is wall-sized — a reader steps to
 // roughly the same distance for any large poster. Left unclamped the fit
 // would hand a 48in poster 48pt body text.
@@ -650,6 +721,8 @@
   fig-max-height: 45%,
   refs-kind: "flow",
   palette: none,
+  handout: none,
+  watermark: none,
   draft: false,
   credit: none,
   body,
@@ -718,6 +791,43 @@
 
   let (page-w, page-h) = resolve-size(size, orientation)
 
+  // Handout: the poster is laid out at its full size exactly as it always
+  // was, and the finished sheet is then scaled onto letter-sized paper. That
+  // is deliberately not the same as rendering a small poster — re-deriving
+  // type sizes for a letter page would reflow a layout that was proofed at
+  // A0 into one nobody has looked at, and the base-size floor would put 14pt
+  // body in 3in columns. Scaling keeps the handout a picture of the board,
+  // which is what makes it recognisable to someone who just walked away from
+  // it, at the cost of type that lands wherever the ratio puts it (the draft
+  // panel reports where).
+  let sheet = resolve-handout(handout, page-w, page-h)
+  let (sheet-w, sheet-h) = if sheet == none { (page-w, page-h) } else { sheet }
+  let fit = calc.min(sheet-w / page-w, sheet-h / page-h)
+  // Applied to the page background, the page foreground and the body alike,
+  // so all three keep working in poster coordinates: the overflow warning
+  // still measures against `page-h`, the credit line still insets by
+  // `margin`, and the draft panel still sets 11pt against poster type.
+  // Identity when there is no handout, so an ordinary poster lays out exactly
+  // as it did before this existed.
+  //
+  // `place` and not a plain block: a page-height block on a letter page
+  // participates in the flow and breaks across pages, which would turn the
+  // one thing a poster is guaranteed to be — one page — into three.
+  let impose(body) = if sheet == none { body } else {
+    place(
+      top + left,
+      dx: (sheet-w - fit * page-w) / 2,
+      dy: (sheet-h - fit * page-h) / 2,
+      scale(
+        x: fit * 100%,
+        y: fit * 100%,
+        origin: top + left,
+        reflow: false,
+        block(width: page-w, height: page-h, body),
+      ),
+    )
+  }
+
   // An explicit YAML size always wins; `auto` derives from the page.
   let base-font-size = if base-font-size == auto {
     auto-base-size(size, page-w)
@@ -764,6 +874,22 @@
   // accent fill or competes with the title — neither is worth a config
   // option. An unrecognised value still prints, in the default corner,
   // rather than vanishing and leaving the author to wonder why.
+  // Watermark: off unless asked for. `true` stamps DRAFT, any other string
+  // stamps itself, so "DO NOT CIRCULATE" or a date needs no second option.
+  //
+  // Unlike `size` and `theme` this does NOT panic on anything unexpected —
+  // there is nothing to get wrong. Every string is a valid watermark, which
+  // is exactly why the off-switches have to be spelled out: `watermark:
+  // false` arrives here as the string "false", and stamping the word FALSE
+  // across a poster is not what anyone meant by it.
+  let watermark-text = if watermark in (none, false, true, "", "true") {
+    if watermark in (true, "true") { "DRAFT" } else { none }
+  } else if watermark in ("false", "none") {
+    none
+  } else {
+    watermark
+  }
+
   let credit-label = [Built with quarto-sciposter]
   let credit-align = if credit in (none, "false", "none") {
     none
@@ -774,8 +900,8 @@
   }
 
   set page(
-    width: page-w,
-    height: page-h,
+    width: sheet-w,
+    height: sheet-h,
     margin: 0pt,
     ..th.page-args,
     // A poster is one page; overflowing body text is CLIPPED at the page
@@ -790,7 +916,7 @@
     // block that outgrows it, so overflowing content keeps drawing — over the
     // footer bar, or over a bottom-pinned `.full-width` float — while staying
     // comfortably inside the page. Against `page-h` all of that reads as fine.
-    background: context {
+    background: impose(context {
       let warn(msg) = place(
         top + center,
         dy: 0.35 * page-h,
@@ -841,12 +967,54 @@
           }
         }
       }
-    },
+    }),
     // Draft diagnostics: opt-in via `poster.draft: true`, never in a final
     // render. Reports the two measurable constraints (line measure, and what
     // distance each type tier is actually sized for) so they can be judged
     // before printing rather than at the poster session.
-    foreground: {
+    foreground: impose({
+    // Drawn before the credit line and the draft panel so both sit over it,
+    // and in the foreground rather than the background because a watermark
+    // that content can be laid on top of is one a figure can hide.
+    //
+    // Set along the poster's own diagonal, at whatever size makes the ROTATED
+    // word fill 90% of the page. A fixed point size would be lost on an A0
+    // and off the edge of an A2; fitting the unrotated width instead is what
+    // the first cut did, and it ran "DRAFT" off both corners — a word set at
+    // angle t occupies w*cos(t) + h*sin(t) across and w*sin(t) + h*cos(t)
+    // down, and the second term is not small when the letters are a foot
+    // tall. Fitting the box the reader actually sees also means a long phrase
+    // and a short one are both bounded, rather than one of them being sized
+    // for and the other overflowing.
+    if watermark-text != none {
+      context {
+        let args = th.watermark-text-args
+        // A size named in `theme-overrides` wins, the same as everywhere
+        // else — and then there is nothing to measure or fit.
+        let angle = -calc.atan(page-h / page-w)
+        let sized = if "size" in args { args } else {
+          let ref-size = 100pt
+          let probe = measure(text(..(size: ref-size) + args, watermark-text))
+          let c = calc.abs(calc.cos(angle))
+          let s = calc.abs(calc.sin(angle))
+          let box-w = probe.width * c + probe.height * s
+          let box-h = probe.width * s + probe.height * c
+          let fit = 0.9 * calc.min(page-w / box-w, page-h / box-h)
+          (size: ref-size * fit) + args
+        }
+        // Boxed at its own measured width, because `place` hands the text the
+        // whole page to lay out in and anything longer than a word then
+        // WRAPS: "DO NOT CIRCULATE" came back as two stacked lines set at
+        // the size computed for one. `measure` works in an unbounded region,
+        // so the width it reports is the unwrapped one, and a box of exactly
+        // that width has no break to take.
+        let line = measure(text(..sized, watermark-text))
+        place(
+          center + horizon,
+          rotate(angle, box(width: line.width, text(..sized, watermark-text))),
+        )
+      }
+    }
     // `context` because the credit measures the footer bar to clear it rather
     // than printing on top of it. With no footer that measures zero and the
     // credit sits on the bottom margin.
@@ -894,6 +1062,18 @@
               row-gutter: 5pt,
               column-gutter: 10pt,
               ..row("page", str(calc.round(page-w / 1in, digits: 1)) + " x " + str(calc.round(page-h / 1in, digits: 1)) + " in"),
+              // What the handout actually does to the type is the only
+              // thing about it an author has to judge, and the ratio is not
+              // guessable from the two paper sizes without doing the sum.
+              ..if sheet != none {
+                row(
+                  "handout",
+                  str(calc.round(sheet-w / 1in, digits: 1)) + " x "
+                    + str(calc.round(sheet-h / 1in, digits: 1)) + " in \u{00b7} body "
+                    + str(calc.round(fit * base-font-size / 1pt, digits: 1)) + "pt",
+                  c: if fit * base-font-size < 7pt { rgb("#ff6b6b") } else { white },
+                )
+              } else { () },
               ..row("columns", str(n-columns) + " @ " + str(calc.round(col-w / 1in, digits: 2)) + " in"),
               ..row("measure", str(calc.round(cpl)) + " ch/line  " + verdict.at(0), c: verdict.at(1)),
               ..tier("title", title-font-size),
@@ -921,7 +1101,7 @@
         ),
       )
     }
-    },
+    }),
   )
   // Computed sizes go UNDER the theme dict throughout, so a theme (or an
   // override) that names `size` explicitly wins over the derived default.
@@ -1117,7 +1297,7 @@
     [#metadata("sciposter-end") <sciposter-end>]
   }
 
-  grid(
+  impose(grid(
     rows: if footerbar != none { (auto, 1fr, auto) } else { (auto, 1fr) },
     titlebar,
     block(
@@ -1136,5 +1316,5 @@
       },
     ),
     ..if footerbar != none { (footerbar,) } else { () },
-  )
+  ))
 }
